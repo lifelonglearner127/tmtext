@@ -5,6 +5,7 @@ import json
 import random
 import zipfile
 import unidecode
+import urlparse
 import string
 import redis
 import boto
@@ -375,21 +376,21 @@ def json_serializer(obj):
 
 
 def write_msg_to_sqs(queue_name_or_instance, msg):
-    if not isinstance(msg, (str, unicode)):
-        msg = json.dumps(msg, default=json_serializer)
-    if isinstance(queue_name_or_instance, (str, unicode)):
-        sqs_queue = SQS_Queue(queue_name_or_instance)
-    else:
-        sqs_queue = queue_name_or_instance
-    if getattr(sqs_queue, 'q', '') is None:
-        logger.warning("Queue '%s' does not exist. Will be created new one.",
-                       queue_name_or_instance)
-        _create_sqs_queue(sqs_queue.conn, queue_name_or_instance)
-        sqs_queue = SQS_Queue(queue_name_or_instance)
-    time.sleep(5)  # let the queue get up
     try:
+        if not isinstance(msg, (str, unicode)):
+            msg = json.dumps(msg, default=json_serializer)
+        if isinstance(queue_name_or_instance, (str, unicode)):
+            sqs_queue = SQS_Queue(queue_name_or_instance)
+        else:
+            sqs_queue = queue_name_or_instance
+        if getattr(sqs_queue, 'q', '') is None:
+            logger.warning("Queue '%s' does not exist. Will be created new one.",
+                           queue_name_or_instance)
+            _create_sqs_queue(sqs_queue.conn, queue_name_or_instance)
+            sqs_queue = SQS_Queue(queue_name_or_instance)
+        time.sleep(5)  # let the queue get up
         sqs_queue.put(msg)
-    except Exception, e:
+    except Exception as e:
         logger.error("Failed to put message to queue %s:\n%s",
                      queue_name_or_instance, str(e))
 
@@ -545,6 +546,30 @@ def datetime_difference(d1, d2):
     return 86400 * res.days + res.seconds
 
 
+def install_geckodriver(
+        fallback_url='/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz',
+        github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
+    import lxml.html
+    import requests
+
+    response = requests.get(github_latest_url)
+
+    try:
+        link = lxml.html.fromstring(response.text).xpath(
+            '//a[contains(@href, ".tar.gz")][contains(@href, "linux64")]/@href')[0]
+    except IndexError:
+        print('error while downloading latest geckodriver')
+        link = fallback_url
+
+    if link.startswith('/'):
+        link = urlparse.urljoin('https://github.com', link)
+
+    os.system('wget "%s" -O _geckodriver.tar.gz' % link)
+    os.system('tar xf _geckodriver.tar.gz')
+    os.system('mv geckodriver /home/spiders/')
+    os.system('chmod +x /home/spiders/geckodriver')
+
+
 class ScrapyTask(object):
     """
     class to control flow of the scrapy process with given task from SQS
@@ -676,6 +701,7 @@ class ScrapyTask(object):
 
     def _get_next_signal(self, date_time):
         """get and remove next signal from the main queue"""
+        logger.warning('_get_next_signal called')
         try:
             k = self.required_signals.iterkeys().next()
         except StopIteration:
@@ -1142,6 +1168,7 @@ class ScrapyTask(object):
         and stops scrapy process, logs duration for given signal
         """
         while not self._stop_signal:  # run through all signals
+            logger.warning('checking signal')
             step_time_start = datetime.datetime.utcnow()
             next_signal = self._get_next_signal(step_time_start)
             if not next_signal:
@@ -1170,7 +1197,7 @@ class ScrapyTask(object):
             self.task_data['start_time'] = \
                 time.mktime(self.start_date.timetuple())
             self._start_scrapy_process()
-            self._push_simmetrica_events()
+            # self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
             logger.warning('Error occurred while starting scrapy: %s', ex)
@@ -1881,19 +1908,20 @@ def prepare_test_data():
     #     task_id=4444, site='amazon', searchterms_str='iphone',
     #     server_name='test_server_name', with_best_seller_ranking=True,
     #     cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
-    # ), dict(
-    #     task_id=4445, site='target', searchterms_str='iphone',
-    #     server_name='test_server_name', with_best_seller_ranking=True,
-    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     # ),
+    dict(
+        task_id=4445, branch_name='Bug13779SqsIssue', site='target', searchterms_str='iphone',
+        server_name='test_server_name', with_best_seller_ranking=False,
+        cmd_args={'quantity': 10}, attributes={'SentTimestamp': '1443426145373'}
+    ),
+        # dict(
+        #     task_id=4446, site='walmart',
+        #     url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
+        #     server_name='test_server_name', with_best_seller_ranking=False,
+        #     cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        # ),
         dict(
-            task_id=4446, branch_name='Bug12886ScreenshotIssueFixed', site='walmart',
-            url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
-            server_name='test_server_name', with_best_seller_ranking=False,
-            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
-        ),
-        dict(
-            task_id=4447, branch_name='Bug12886ScreenshotIssueFixed', site='amazon',
+            task_id=4447, branch_name='Bug13779SqsIssue', site='amazon',
             url='https://www.amazon.com/Anki-000-00048-Cozmo/dp/B01GA1298S/',
             server_name='test_server_name', with_best_seller_ranking=False,
             cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
@@ -1933,6 +1961,10 @@ if __name__ == '__main__':
             from repo.fake_sqs_queue_class import SQS_Queue
         logger.debug('TEST MODE ON')
         logger.debug('Faking the SQS_Queue class')
+
+    # TODO: move the whole code for downloading geckodriver to post_starter_root.py and rebuild the AMI image
+    if not os.path.exists('/home/spiders/geckodriver'):
+        install_geckodriver()
 
     try:
         main()

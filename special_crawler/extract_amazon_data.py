@@ -447,6 +447,94 @@ class AmazonScraper(Scraper):
         if bullets and len(bullets) > 4:
             return self._clean_text(bullets[4].text_content())
 
+    def _bullet_feature_6(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 5:
+            return self._clean_text(bullets[5].text_content())
+
+
+    def _bullet_feature_7(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 6:
+            return self._clean_text(bullets[6].text_content())
+
+
+    def _bullet_feature_8(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 7:
+            return self._clean_text(bullets[7].text_content())
+
+
+    def _bullet_feature_9(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 8:
+            return self._clean_text(bullets[8].text_content())
+
+
+    def _bullet_feature_10(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 9:
+            return self._clean_text(bullets[9].text_content())
+
+
+    def _bullet_feature_11(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 10:
+            return self._clean_text(bullets[10].text_content())
+
+
+    def _bullet_feature_12(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 11:
+            return self._clean_text(bullets[11].text_content())
+
+
+    def _bullet_feature_13(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 12:
+            return self._clean_text(bullets[12].text_content())
+
+
+    def _bullet_feature_14(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 13:
+            return self._clean_text(bullets[13].text_content())
+
+
+    def _bullet_feature_15(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 14:
+            return self._clean_text(bullets[14].text_content())
+
+
+    def _bullet_feature_16(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 15:
+            return self._clean_text(bullets[15].text_content())
+
+
+    def _bullet_feature_17(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 16:
+            return self._clean_text(bullets[16].text_content())
+
+
+    def _bullet_feature_18(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 17:
+            return self._clean_text(bullets[17].text_content())
+
+
+    def _bullet_feature_19(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 18:
+            return self._clean_text(bullets[18].text_content())
+
+    def _bullet_feature_20(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 19:
+            return self._clean_text(bullets[19].text_content())
+
     def _bullets(self):
         bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
         bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
@@ -1089,7 +1177,7 @@ class AmazonScraper(Scraper):
         if len(image_url)==0:
             image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
         for v in image_url:
-            if v.find("player")>0 :
+            if v.find("player")>0 and not re.search('\.png$', v):
                 temp.append(v)
 
         video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
@@ -1165,7 +1253,7 @@ class AmazonScraper(Scraper):
     def _review_count(self):
         if not self.is_review_checked:
             self._reviews()
-        if self.review_list:
+        if self.review_list and len(self.review_list) == 5:
             sumup = 0
             for i,v in self.review_list:
                 sumup +=int(v)
@@ -1673,6 +1761,21 @@ class AmazonScraper(Scraper):
         "bullet_feature_3": _bullet_feature_3, \
         "bullet_feature_4": _bullet_feature_4, \
         "bullet_feature_5": _bullet_feature_5, \
+        "bullet_feature_6": _bullet_feature_6, \
+        "bullet_feature_7": _bullet_feature_7, \
+        "bullet_feature_8": _bullet_feature_8, \
+        "bullet_feature_9": _bullet_feature_9, \
+        "bullet_feature_10": _bullet_feature_10, \
+        "bullet_feature_11": _bullet_feature_11, \
+        "bullet_feature_12": _bullet_feature_12, \
+        "bullet_feature_13": _bullet_feature_13, \
+        "bullet_feature_14": _bullet_feature_14, \
+        "bullet_feature_15": _bullet_feature_15, \
+        "bullet_feature_16": _bullet_feature_16, \
+        "bullet_feature_17": _bullet_feature_17, \
+        "bullet_feature_18": _bullet_feature_18, \
+        "bullet_feature_19": _bullet_feature_19, \
+        "bullet_feature_20": _bullet_feature_20, \
         "bullets": _bullets, \
         "usage": _usage, \
         "directions": _directions, \

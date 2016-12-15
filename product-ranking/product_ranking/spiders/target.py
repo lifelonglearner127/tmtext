@@ -241,6 +241,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         populate_from_open_graph(response, prod)
 
         prod['url'] = old_url
+
+        regex = "-/([A-Z0-9\-]+)"
+        reseller_id = re.findall(regex, prod.get('url', ''))
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, "reseller_id", reseller_id)
         # cond_set_value(prod, 'url', old_url)
 
         item_info = self._item_info_v3(response)

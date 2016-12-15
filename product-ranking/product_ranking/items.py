@@ -174,6 +174,8 @@ class SiteProductItem(Item):
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
     price_with_discount = Field(serializer=scrapy_price_serializer)
     marketplace = Field(serializer=scrapy_marketplace_serializer)  # see marketplace obj
+    # See bugzilla #11492
+    reseller_id = Field()
 
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.

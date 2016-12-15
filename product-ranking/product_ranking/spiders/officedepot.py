@@ -207,6 +207,10 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         model = self._parse_model(response)
         cond_set_value(product, 'model', model)
 
+        # Parse reseller_id
+        reseller_id = self.parse_reseller_id(response)
+        cond_set_value(product, "reseller_id", reseller_id)
+
         # Parse is out of stock
         oos = self._parse_is_out_of_stock(response)
         cond_set_value(product, 'is_out_of_stock', oos)
@@ -238,7 +242,6 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         name = is_empty(response.xpath(
             '//h1[@itemprop="name"]/text()').re('(.*?),'))
 
-
         if sku and name and self.scrape_variants_with_extra_requests:
             name = urllib.quote_plus(name.strip().encode('utf-8'))
             reqs.append(Request(url=self.VARIANTS_URL.format(name=name,
@@ -257,6 +260,12 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         if reqs:
             return self.send_next_request(reqs, response)
         return product
+
+    def parse_reseller_id(self, response):
+        regex = "\/(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
 
     def _parse_questions(self, response):
         meta = response.meta

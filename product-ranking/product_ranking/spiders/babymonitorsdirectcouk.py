@@ -57,6 +57,10 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
+        # Parse reseller_id
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(product, 'reseller_id', reseller_id, conv=string.strip)
+
         # Parse brand
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand, conv=string.strip)
@@ -91,6 +95,12 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
         return product
 
+    def _parse_reseller_id(self, response):
+        reseller_id = is_empty(response.xpath('.//*[@class="sku"]//span[@class="value"]/text()').extract())
+        if reseller_id:
+            reseller_id = reseller_id.strip()
+        return reseller_id
+
     def _parse_title(self, response):
         title = is_empty(
             response.xpath(
@@ -116,10 +126,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
     def _parse_price(self, response):
         price = is_empty(
-            response.xpath('//p[@class="special-price"]/'
-                           'span[@class="price"]/text() |'
-                           '//span[@class="regular-price"]'
-                           '/span[@class="price"]/text()').extract(), 0.00
+            response.xpath('//p[@class="special-price"]/span[@itemprop="price"]/text()'
+                           ' |//span[@class="regular-price"]/span[@itemprop="price"]/text()').extract(), 0.00
         )
         if price:
             price = is_empty(

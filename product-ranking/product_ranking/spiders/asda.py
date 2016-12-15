@@ -70,6 +70,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod["url"] = self.product_url
+            prod["reseller_id"] = pId
             yield Request(url,
                           self._parse_single_product,
                           meta={'product': prod})

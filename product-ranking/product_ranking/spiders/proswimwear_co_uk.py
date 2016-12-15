@@ -109,6 +109,9 @@ class ProswimwearCoUkSpider(BaseProductsSpider):
         model = response.xpath('//div[@itemprop="name"]/p/text()').extract()
         cond_set(product, 'model', model)
 
+        reseller_id = response.xpath('//*[@class="product-sku"]/text()').extract()
+        cond_set(product, 'reseller_id', reseller_id)
+
         # Is_out_of_stock
         xpath = '//span[@id="availability-box" and text()="Out of stock"]'
         cond_set_value(product, 'is_out_of_stock', response.xpath(xpath), bool)

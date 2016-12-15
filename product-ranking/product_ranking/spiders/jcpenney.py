@@ -10,9 +10,11 @@ import random
 import urlparse
 
 import requests
+from requests.auth import HTTPProxyAuth
 from scrapy.http import Request
 from scrapy import Selector
 from scrapy.log import WARNING
+from scrapy.conf import settings
 
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -73,7 +75,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'rating_desc': 'RHL'
     }
 
-    use_proxies = True
+    # disabled TOR proxies due 403 status code
+    # use_proxies = True
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
@@ -114,6 +117,12 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+        # settings.overrides['CRAWLERA_ENABLED'] = True
+        # default_headers = settings.get('DEFAULT_REQUEST_HEADERS')
+        # default_headers['X-Crawlera-UA'] = 'pass'
+        # default_headers['X-Forwarded-For'] = '127.0.0.1'
+        # settings.overrides['DEFAULT_REQUEST_HEADERS'] = default_headers
+        self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'
 
     def start_requests(self):
         cookies = {'pageTemplate': 'new'}
@@ -351,19 +360,30 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             except TypeError:
                 _rp = None
 
+            # replaced tor proxies with crawlera
             # try to fetch the page using a random proxy until it works
-            for _ in range(100):
-                if _rp is not None:
-                    random_proxy = random.choice(_rp.proxies.keys())
-                else:
-                    random_proxy = None
-                proxies = {"http": random_proxy, "https": random_proxy}
-                self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
-                    size_url, random_proxy))
+            # for _ in range(100):
+            #     if _rp is not None:
+            #         random_proxy = random.choice(_rp.proxies.keys())
+            #     else:
+            #         random_proxy = None
+            #     proxies = {"http": random_proxy, "https": random_proxy}
+            #     self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
+            #         size_url, random_proxy))
 
-                # perform sync request
+            # perform sync request
+            proxy_host = "content.crawlera.com"
+            proxy_port = "8010"
+            CRAWLERA_APIKEY = '0dc1db337be04e8fb52091b812070ccf'
+            proxy_auth = HTTPProxyAuth(CRAWLERA_APIKEY, "")
+            proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port), \
+                            "https": "https://{}:{}/".format(proxy_host, proxy_port)}
+            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36',
+                       'X-Crawlera-UA': 'pass'}
+            for _ in range(15):
+                self.log('Retry count {}'.format(_))
                 try:
-                    result = requests.get(size_url, proxies=proxies, timeout=15)
+                    result = requests.get(size_url, proxies=proxies, timeout=300, auth=proxy_auth, headers=headers, verify=False)
                 except Exception, e:
                     self.log('Non-fatal error %s while fetching URL %s' % (str(e), size_url))
                     continue
@@ -392,25 +412,29 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
             variant['in_stock'] = None
 
-        if result.get('priceHtml', None):
-            price_data = result['priceHtml']
-            if price_data:
-                price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
-                if price:
-                    try:
-                        price = price[1]
-                    except:
-                        price = price[0]
-                    variant['price'] = price
-        # find of such a combination is available
-        if color:
-            _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
-            if _avail:
-                _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
-                if not color in _avail:
-                    variant['in_stock'] = False
-                    return  # not defined; availability unknown
-                variant['in_stock'] = _avail[color]
+        if isinstance(result, dict):
+            if result.get('priceHtml', None):
+                price_data = result['priceHtml']
+                if price_data:
+                    price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
+                    if price:
+                        try:
+                            price = price[1]
+                        except:
+                            price = price[0]
+                        variant['price'] = price
+            # find of such a combination is available
+            if color:
+                _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
+                if _avail:
+                    _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
+                    if not color in _avail:
+                        variant['in_stock'] = False
+                        return  # not defined; availability unknown
+                    variant['in_stock'] = _avail[color]
+        else:
+            # TODO: fix this behaviour
+            self.log('Result variable isn\'t a dictionary, please fix')
         yield product
 
     @staticmethod
@@ -418,9 +442,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         return ('varisSephora=true'
                 in response.body_as_unicode().replace(' ', '').replace("'", ''))
 
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "ppId=(p?p?\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+        prod['reseller_id'] = self._parse_reseller_id(response.url)
         prod['_subitem'] = True
 
         if "what you are looking for is currently unavailable" in response.body_as_unicode().lower():
@@ -436,50 +468,15 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
-        jp = JcpenneyVariants()
-        jp.setupSC(response)
-        prod['variants'] = jp._variants()
-        # perform blocking http request to scrape dynamic structure of variants,
-        # otherwise invalid variants get into the output file
-        processed_lots = []  # lots for which we collected dynamic variants
-        new_lot_structure = {}
-        p_l = 0
-        if prod.get('variants'):
-            for var_indx, variant in enumerate(prod['variants']):
-                if getattr(self, 'scrape_variants_with_extra_requests', None):
+        availability_json = self._extract_availability_json(response.body_as_unicode())
+        availability_dict = self._build_availability_dict(availability_json)
+        product_json = self._get_product_json(product_id)
+        properties_dict = self._build_properties_dict(product_json)
+        variants = self._build_variants(product_json, properties_dict, availability_dict, prod.get('price'))
+        if variants:
+            prod['variants'] = variants
 
-                    if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
-                        continue
-                    _lot, _dynamic_structure = self._ajax_variant_request(
-                        product_id, response, prod['variants'], variant, var_indx,
-                        async=False, null_values=['size']
-                    )
-                    if variant.get('properties', {}).get('lot', '').lower():
-                        processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
-                    else:
-                        processed_lots.append(variant.get('lot', '').lower())
 
-                    new_lot_structure[_lot] = _dynamic_structure
-                    if _lot:
-                        self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                        self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
-            try:
-                processed_lots[1] = processed_lots[0]
-            except:
-                pass
-            for var_indx, variant in enumerate(prod['variants']):
-                if getattr(self, 'scrape_variants_with_extra_requests', None):
-
-                    if processed_lots:
-                        lot_id = processed_lots[p_l]
-                        p_l += 1
-                        if p_l >= len(processed_lots):
-                            p_l = 0
-                    else:
-                        lot_id = ''
-                    yield self._ajax_variant_request(
-                        product_id, response, prod['variants'], variant, var_indx,
-                        Lot=lot_id)
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
@@ -630,6 +627,18 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
         if brs.get('average_rating', None):
             if brs.get('rating_by_star', None):
+                for k,v in brs['rating_by_star'].items():
+                    if k not in ['1', '2', '3', '4', '5']:
+                        #manually parse
+                        arr = response.xpath('//span[contains(@class, "BVRRHistStarLabelText")]//span[contains(@class,"BVRRHistAbsLabel")]//text()').extract()
+                        stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                        for i in range(5):
+                            num = arr[i*2]
+                            num = num.replace(',', '')
+                            num = re.findall(r'\d+', num)[0]
+                            stars[str(5-i)] = int(num.replace(',', ''))
+                        brs['rating_by_star'] = stars
+                        break
                 product['buyer_reviews'] = brs
 
         if not product.get('buyer_reviews', None) and response.status == 200:
@@ -744,3 +753,64 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         if next_page:
             next_page = 'http://www.jcpenney.com'+next_page[-1]
             return next_page
+
+    @staticmethod
+    def _get_product_json(product_id):
+        url = "http://m.jcpenney.com/v4/products/{product_id}".format(product_id=product_id)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'}
+        text = requests.get(url, headers=headers).text
+        return json.loads(text) if text else {}
+
+    @staticmethod
+    def _build_properties_dict(product_json):
+        properties = product_json.get('dimensions', [])
+        properties_dict = {}
+        for property in properties:
+            options = property.get('options', [])
+            name = property.get('name')
+            for option in options:
+                option_id = option.get('id')
+                value = option.get('value')
+                properties_dict[option_id] = {'name': name, 'value': value}
+        return properties_dict
+
+    @staticmethod
+    def _extract_availability_json(body):
+        pattern = re.compile('var\s*jcpPPJSON\s*=\s*({.+?})\s*;', re.DOTALL)
+        availability_json = pattern.search(body)
+        return json.loads(availability_json.group(1)) if availability_json else {}
+
+    @staticmethod
+    def _build_availability_dict(availability_json):
+        availability_dict = {}
+        products = availability_json.get('products')
+        lots = products[0].get('lots') if products else []
+        for lot in lots:
+            skus = lot.get('skus', [])
+            for sku in skus:
+                sku_id = sku.get('skuID')
+                sku_availability = sku.get('skuStatus') != 'NotAvailable'
+                availability_dict[sku_id] = sku_availability
+        return availability_dict
+
+    @staticmethod
+    def _build_variants(product_json, properties_dict, availability_dict, price):
+        lots = product_json.get('lots', [])
+        variants = []
+        for lot in lots:
+            items = lot.get('items', [])
+            for item in items:
+                sku_id = item.get('id')
+                variant = {}
+                variant['price'] = float(price.price)
+                variant['in_stock'] = availability_dict.get(sku_id)
+                variant['properties'] = {'sku': sku_id}
+                options = item.get('options')
+                for option_id in options:
+                    option_data = properties_dict.get(option_id)
+                    option_name = option_data.get('name')
+                    option_value = option_data.get('value')
+                    variant['properties'][option_name] = option_value
+                variants.append(variant)
+        return variants

@@ -74,7 +74,7 @@ class WalmartScraper(Scraper):
 
     CRAWLERA_APIKEY = '6b7c3e13db4e440db31d457bc10e6be8'
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -338,7 +338,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?.*)?", self.product_page_url)
         return not not m
 
     def _is_collection_url(self):
@@ -1196,7 +1196,8 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1 and not index == long_description.find('<h3>About'):
+            if index > -1 and not index in [long_description.find('<h3>About'), \
+                long_description.find('<h3>' + self._product_name_from_tree().split(',')[0])]:
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:
@@ -1286,7 +1287,8 @@ class WalmartScraper(Scraper):
             if shelf_description_html and shelf_description_html.strip():
                 return HTMLParser().unescape(shelf_description_html.strip())
 
-        return None
+        self._extract_product_info_json()
+        return self.product_info_json.get('shortDescription')
 
     def _variants(self):
         if self._no_longer_available():
@@ -1533,6 +1535,13 @@ class WalmartScraper(Scraper):
 
         return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
 
+    def _mpn(self):
+        if self._features_from_tree():
+            for feature in self._features_from_tree().split('\n'):
+                feature = feature.split(':')
+                if feature[0] in ['Manufacturer Part Number', 'manufacturer_part_number']:
+                    return feature[1]
+
     def _categories_hierarchy(self):
         """Extracts full path of hierarchy of categories
         this product belongs to, from the lowest level category
@@ -1763,7 +1772,13 @@ class WalmartScraper(Scraper):
             if upc:
                 return upc
 
-            upc = self.product_choice_info_json.get("product", {}).get("wupc")
+            if self.product_choice_info_json:
+                upc = self.product_choice_info_json.get("product", {}).get("wupc")
+
+                if upc:
+                    return upc
+
+            upc = product_info_json.get("wupc")
 
             if upc:
                 return upc
@@ -2794,7 +2809,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
@@ -2960,7 +2975,7 @@ class WalmartScraper(Scraper):
         if warnings:
             warnings = warnings[0]
 
-            header = warnings.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-warnings')]/p[1]/b/text()")
 
             if not header:
                 header = warnings.xpath('./strong/text()')
@@ -2971,23 +2986,20 @@ class WalmartScraper(Scraper):
                         return txt.strip()
 
     def _directions(self):
-        directions = self.tree_html.xpath("//section[contains(@class,'directions')]/p[2]")
-
-        if not directions:
-            directions = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]")
+        directions = self.tree_html.xpath("//section[contains(@class,'directions')]")
 
         if directions:
             directions = directions[0]
 
-            header = directions.xpath('./b/text()')
+            directions_text = ''
 
-            if not header:
-                header = directions.xpath('./strong/text()')
+            for e in directions:
+                text_content = e.text_content().strip()
 
-            if header and 'Instructions' in header[0]:
-                for txt in directions.xpath('./text()'):
-                    if txt.strip():
-                        return txt.strip()
+                if not e.tag == 'h3' and text_content and not text_content == 'Instructions:':
+                    directions_text += re.sub('\s*<[^>]*>\s*Instructions:\s*<[^>]*>\s*', '', html.tostring(e)).strip()
+
+            return directions_text
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -3409,6 +3421,7 @@ class WalmartScraper(Scraper):
         "htags": _htags_from_tree, \
         "model": _model_from_tree, \
         "model_meta": _meta_model_from_tree, \
+        "mpn": _mpn, \
         "features": _features_from_tree, \
         "feature_count": _nr_features_from_tree, \
         "title_seo": _title_from_tree, \

@@ -221,7 +221,14 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
     #     else:
     #         yield super(MacysProductsSpider, self).parse_product(response)
 
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "ID=(\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
 
+    # TODO Maybe refactor this to be thread-safe?
     def _populate_from_html(self, response, product):
         """
         @returns items 1 1
@@ -229,6 +236,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         """
 
         product = response.meta.get('product', SiteProductItem())
+        product['reseller_id'] = self._parse_reseller_id(response.url)
 
         if u'>this product is currently unavailable' in response.body_as_unicode().lower():
             product['no_longer_available'] = True
@@ -256,10 +264,22 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         if not price:
             price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
         if not price:
-            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]')
+            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]').re(FLOATING_POINT_RGEX)
+
+        if not price:
+            # TODO Move to another method, populate_from_json
+            json_product_data = response.xpath('.//script[@id="productMainData"]/text()').extract()
+            json_product_data = json.loads(json_product_data[0]) if json_product_data else None
+            if json_product_data:
+                price = [json_product_data.get('salePrice')]
+                in_stock = json_product_data.get('inStock', None)
+                if in_stock is not None:
+                    if in_stock == "true":
+                        product['is_out_of_stock'] = False
+                    else:
+                        product['is_out_of_stock'] = True
         if price:
-                product['price'] = Price(price=price[0],
-                                         priceCurrency='USD')
+            product['price'] = Price(price=price[0], priceCurrency='USD')
 
         if not product.get("image_url") or \
                 "data:image" in product.get("image_url"):
@@ -310,6 +330,10 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         if not product.get('description', ''):
             product['description'] = (
                 ' '.join(response.css('#product-detail-control ::text').extract()))
+
+        if not product.get('description', ''):
+            desc = response.xpath(".//*[@id='longDescription']/text()").extract()
+            product['description'] = desc[0] if desc else ''
 
         locale = response.css('#headerCountryFlag::attr(title)').extract()
         if not locale:

@@ -94,11 +94,18 @@ from extract_petfooddirect_data import PetFoodDirectScraper
 from extract_pet360_data import Pet360Scraper
 from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
+from extract_samsung_data import SamsungScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
+from extract_pepboys_data import PepboysScraper
 from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
+from extract_hayneedle_data import HayneedleScraper
+from extract_ah_data import AhScraper
+from extract_cheaperthandirt_data import CheaperthandirtScraper
+from extract_allmodern_data import AllmodernScraper
+from extract_zulily_data import ZulilyScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -110,6 +117,8 @@ from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
+import requests
+import collections
 
 app = Flask(__name__)
 
@@ -204,12 +213,20 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "sears" : SearsScraper,
+                    "pepboys" : PepboysScraper,
+                    "samsung" : SamsungScraper,
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
                     "sears" : SearsScraper,
                     "westmarine" : WestmarineScraper,
                     "jet" : JetScraper,
-                    "shoprite" : ShopriteScraper
+                    "shoprite" : ShopriteScraper,
+                    "hayneedle" : HayneedleScraper,
+                    "allmodern" : AllmodernScraper,
+                    "ah" : AhScraper,
+                    "zulily" : ZulilyScraper,
+                    "cheaperthandirt" : CheaperthandirtScraper
                     }
 
 # add logger
@@ -313,6 +330,8 @@ def extract_domain(url):
         return 'walmartgrocery'
     if 'jet.com' in url:
         return 'jet'
+    if 'hayneedle.com' in url:
+        return 'hayneedle'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
@@ -383,6 +402,38 @@ def validate_data_params(arguments, ALL_DATA_TYPES):
                 with the <data_i> values among the following keywords: \n" + str(data_permitted_values))
 
 
+# sort dict keys like natural view
+# ex:
+#   {"b2": 1, "b1": 1, "b11": 1, "b21": 1, "b12": 1} => {"b1": 1, "b2": 1, "b11": 1, "b12": 1, "b21": 1}
+#
+def natural_sort(d):
+
+    def atoi(text):
+        return int(text) if text.isdigit() else text
+
+    def natural_keys(text):
+        return [atoi(c) for c in re.split('(\d+)', text)]
+    try:
+        if not isinstance(d, (dict)):
+            return d, True
+
+        is_sorted = True
+        keys = d.keys()
+        keys.sort(key=natural_keys)
+
+        dict_val = []
+        for key in keys:
+            sd, status = natural_sort(d[key])
+            dict_val += [(key, sd)]
+            if not status:
+                is_sorted = False
+                break
+
+        return collections.OrderedDict(dict_val), is_sorted
+    except:
+        return d, False
+
+
 # general resource for getting data.
 # needs "url" and "site" parameters. optional parameter: "data"
 # can be used without "data" parameter, in which case it will return all data
@@ -398,6 +449,7 @@ def get_data():
 
     url = request_arguments['url'][0]
     site = request_arguments['site'][0]
+
     if 'bot' in request_arguments:
         bot = request_arguments['bot'][0]
     else:
@@ -447,23 +499,31 @@ def get_data():
     # data
     validate_data_params(request_arguments, site_scraper.ALL_DATA_TYPES)
 
-    # return all data if there are no "data" parameters
+    is_ret_sorted = False
     if 'data' not in request_arguments:
+        # return all data if there are no "data" parameters
         try:
-            ret = site_scraper.product_info()
-
+            ret_uf = site_scraper.product_info()
+            # make natural sort for amazon data
+            ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
         except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
+    else:
+        # return only requested data
+        try:
+            ret_uf = site_scraper.product_info(request_arguments['data'])
+            # make natural sort for amazon data
+            ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
+        except HTTPError:
+            raise GatewayError("Error communicating with site crawled.")
 
+    if site == 'amazon' and is_ret_sorted:
+        # Tf site is "Amazon", this API output a json as natural_sort.
+        return app.response_class(json.dumps(ret, indent=2), mimetype='application/json')
+    else:
+        # Else this API use default output ( use jsonify sort )
         return jsonify(ret)
 
-    # return only requested data
-    try:
-        ret = site_scraper.product_info(request_arguments['data'])
-    except HTTPError:
-        raise GatewayError("Error communicating with site crawled.")
-
-    return jsonify(ret)
 
 
 @app.route('/google_search', methods=['GET'])
@@ -581,7 +641,6 @@ def handle_internal_error(error):
 # post request logger
 @app.after_request
 def post_request_logging(response):
-
     app.logger.info(json.dumps({
         "date" : datetime.datetime.today().ctime(),
         "remote_addr" : request.remote_addr,

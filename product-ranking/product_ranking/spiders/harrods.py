@@ -10,6 +10,7 @@ from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request
 from scrapy.log import DEBUG
+import re
 
 
 class HarrodsProductsSpider(BaseProductsSpider):
@@ -196,6 +197,11 @@ class HarrodsProductsSpider(BaseProductsSpider):
             "//h1[contains(@class,'product-title')]/span[@class='brand']"
             "/text()").extract(),
             conv=string.strip)
+
+        reseller_id_regex = "\/(\d+)[\?\&]"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         outofstock = response.xpath(
             "//div[@id='outOfStockContainer' and not(@style)]").extract()
