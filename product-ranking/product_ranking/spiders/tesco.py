@@ -251,5 +251,8 @@ class TescoProductsSpider(BaseProductsSpider):
             product["search_term"] = ""
             product["brand"] = is_empty(self.brand_from_title(product["title"]))
             product["site"] = is_empty(self.allowed_domains)
-
+        if self.product_url:
+            product['is_single_result'] = True
+            if product.get("search_term"):
+                del product['search_term']
         return product

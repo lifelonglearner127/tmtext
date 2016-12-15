@@ -451,11 +451,12 @@ class SqsCache(object):
         metric_field = '%s:%s:%s' % (server, site, search_type)
         return self.db.hincrby(self.REDIS_JOBS_STATS, metric_field, 1)
 
-    def get_jobs_stats(self, match=None):
+    def get_jobs_stats(self, match=None, with_by_site=False):
         """
         Get jobs statistics.
         Args:
             match: Additional filter for redis selector.
+            with_by_site: Additional stats with by site.
         Returns: Dict of statistics. Ex:
             {
                 'url': X,
@@ -489,6 +490,11 @@ class SqsCache(object):
                 })
             })
         }
+        if with_by_site:
+            result_with_by_site = {
+                'url': defaultdict(int),
+                'term': defaultdict(int)
+            }
         while True:
             data = self.db.hscan(self.REDIS_JOBS_STATS,
                                  cursor=page, match=match)
@@ -503,6 +509,10 @@ class SqsCache(object):
                     value = int(value)
                 except ValueError:
                     continue
+                if with_by_site:
+                    # increment bby site stats
+                    result_with_by_site[search_type][site.split('_')[0]] += \
+                        value
                 # increment all stats
                 result[search_type] += value
                 # increment stats per server
@@ -510,6 +520,8 @@ class SqsCache(object):
                 # increment stats per scrapper
                 result['servers'][server]['scrappers'][site][search_type] += \
                     value
+        if with_by_site:
+            return result, result_with_by_site
         return result
 
     def store_execution_time_per_task(self, execution_time, key=None):

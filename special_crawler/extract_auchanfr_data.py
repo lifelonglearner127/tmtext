@@ -10,17 +10,16 @@ from ast import literal_eval
 import time
 import requests
 from extract_data import Scraper
-from collections import Counter
 
 
-class CheaperthandirtScraper(Scraper):
+class AuchanfrScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://www.cheaperthandirt.com/product/.*$"
-    BASE_URL_WEBCOLLAGE_CONTENTS = "https://www.cheaperthandirt.com/product/.*$"
+    INVALID_URL_MESSAGE = "Expected URL format is https://www.auchan.fr/.*$"
+    BASE_URL_WEBCOLLAGE_CONTENTS = "http://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -33,13 +32,16 @@ class CheaperthandirtScraper(Scraper):
         self.has_webcollage_pdf = False
         self.has_webcollage_product_tour_view = False
         self.webcollage_videos = []
+        self.review_count = None
+        self.average_review = None
+        self.reviews = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^https://www.cheaperthandirt.com/product/.*$", self.product_page_url)
+        m = re.match(r"^https://www.auchan.fr/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -50,11 +52,7 @@ class CheaperthandirtScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        try:
-            if len(self.tree_html.xpath('//div[@id="detailViewContainer"]')) == 0:
-                raise Exception()
-
-        except Exception:
+        if len(self.tree_html.xpath("//div[@id='primary_image']")) < 1:
             return True
 
         return False
@@ -75,7 +73,7 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.findall(r':(\d+)', self.tree_html.xpath('//div[@id="productData"]/@data-product-id')[0])[0]
+        product_id = self.tree_html.xpath("//label[@id='prod_Reference']/text()")[0].strip()
         return product_id
 
     def _site_id(self):
@@ -93,21 +91,31 @@ class CheaperthandirtScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@id="h1Title1"]/text()')[0].strip()
+        return self.tree_html.xpath("//div[contains(@class,'pdp_title')]//h1/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@id="h1Title1"]/text()')[0].strip()
+        return self.tree_html.xpath("//div[contains(@class,'pdp_title')]//h1/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@id="h1Title1"]/text()')[0].strip()
+        return self.tree_html.xpath("//div[contains(@class,'pdp_title')]//h1/text()")[0].strip()
 
     def _model(self):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath('//div[contains(@class,"prodDetailInfo")]//span[contains(@class,"itemUpc")]/text()')[0].strip()
+        return self.tree_html.xpath("//p[@class='upc']/span[@class='value']/text()")[0].strip()
 
     def _features(self):
+        lis = self.tree_html.xpath("//div[contains(@class, 'tab-technical-description')]//ul/li")
+        features_list = []
+        for li in lis:
+            feature = li.xpath(".//text()")
+            feature = [r.strip() for r in feature if len(r.strip())>0]
+            feature = ' '.join(feature)
+            features_list.append(feature)
+        if features_list:
+            return features_list
+
         return None
 
     def _feature_count(self):
@@ -120,7 +128,7 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _description(self):
-        short_description = self.tree_html.xpath('//span[@itemprop="description"]/text()')[0].strip()
+        short_description = self.tree_html.xpath("//div[@id='ProductDescriptionTabComponent']//div[contains(@class, 'productDescription')]//text()")[0].strip()
 
         if short_description:
             return short_description
@@ -138,11 +146,13 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_list = self.tree_html.xpath("//div[@id='pdpGallery']//a[contains(@class,'rsImg')]/@href")
+        image_list = self.tree_html.xpath("//ul[@id='carousel_alternate']/li//img/@data-primaryimagesrc")
+
         if image_list:
             return image_list
-        elif self.tree_html.xpath("//div[contains(@class,'rsContainer')]//img[contains(@class,'rsMainSlideImage')]/@src"):
-            main_image_url = self.tree_html.xpath("//div[contains(@class,'rsContainer')]//img[contains(@class,'rsMainSlideImage')]/@src")
+        elif self.tree_html.xpath("//div[@id='primary_image']//a/img/@src"):
+            main_image_url = self.tree_html.xpath("//div[@id='primary_image']//a/img/@src")
+
             return main_image_url
 
         return None
@@ -155,6 +165,12 @@ class CheaperthandirtScraper(Scraper):
 
     def _video_urls(self):
         video_list = []
+
+        for index, url in video_list:
+            video_list[index] = "http:" + video_list[index]
+
+        if not video_list:
+            video_list = []
 
         self._wc_video()
 
@@ -292,16 +308,12 @@ class CheaperthandirtScraper(Scraper):
 
     def _average_review(self):
         reviews = self._reviews()
-        if reviews:
-            return self.average_review
-        return None
+        return self.average_review
 
     def _review_count(self):
-        review_count = re.findall(r'(\d+)', self.tree_html.xpath('//div[contains(@class,"reviewTotals")]/text()')[0].strip())
-
-        if review_count:
-            return int(review_count[0])
-
+        reviews = self._reviews()
+        if self.review_count:
+            return self.review_count
         return 0
 
     def _max_review(self):
@@ -325,33 +337,40 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _reviews(self):
-        scores = self.tree_html.xpath('//div[contains(@class,"reviewGroup")]'
-                                      '//div[contains(@class,"snippetStars")]'
-                                      '//span[contains(@class,"snippetRatingDecimal")]//text()')
-        if len(scores) < 1:
-            return None
-        scores = [int(float(r)) for r in scores]
-        self.average_review = sum(scores)*1.0/len(scores)
-        rating_mark_dict = Counter(scores)
-        rating_mark_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
-        rating_mark_list_new = []
-        for item in rating_mark_list:
-            if rating_mark_dict[item[0]] > 0:
-                item[1] = rating_mark_dict[item[0]]
-            rating_mark_list_new.append(item)
-        return rating_mark_list_new
+        if self.reviews:
+            return self.reviews
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        # https://api.bazaarvoice.com/data/batch.json?passkey=syzh21yn6lf39vjo00ndkig63&apiversion=5.5&displaycode=6073-fr_fr&resource.q0=products&filter.q0=id:eq:CA28549&stats.q0=reviews
+        review_URL = "https://api.bazaarvoice.com/data/batch.json?" \
+                     "passkey=syzh21yn6lf39vjo00ndkig63&apiversion=5.5&" \
+                     "displaycode=6073-fr_fr&" \
+                     "resource.q0=products&" \
+                     "filter.q0=id:eq:%s&" \
+                     "stats.q0=reviews" % self._product_id()
+        contents = requests.get(review_URL, headers=h).text
+        data = json.loads(contents)
+        data = data["BatchedResults"]["q0"]["Results"][0]["ReviewStatistics"]
+        self.review_count = data["TotalReviewCount"]
+        self.average_review = data["AverageOverallRating"]
+
+        rating_mark_list = []
+        for item in data["RatingDistribution"]:
+            rating_mark_list.append([item["RatingValue"], item["Count"]])
+
+        return rating_mark_list
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//*[@id='productPricing']//span[contains(@class,'pricesale')]//text()")[0].strip()
+        return self.tree_html.xpath("//span[@id='priceValue']//meta[@itemprop='price']/@content")[0].strip()
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        price_amount = self.tree_html.xpath("//span[@id='priceValue']//meta[@itemprop='price']/@content")[0].strip()
+        return float(price_amount.replace(',', ''))
 
     def _price_currency(self):
-        return "USD"
+        return self.tree_html.xpath('//meta[@itemprop="priceCurrency"]/@content')[0]
 
     def _in_stores(self):
         return 1
@@ -360,19 +379,10 @@ class CheaperthandirtScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        try:
-            str = self.tree_html.xpath("//form[@id='mainForm']//span[contains(@class,'messagealert')]//text()")[0]
-            if "regret that this item is not available at this time" in str:
-                return 1
-        except:
-            pass
-
-        if len(self.tree_html.xpath("//button[@name='addToBasket']")) < 1:
-            return 1
         return 0
 
     def _in_stores_out_of_stock(self):
-        return None
+        return 0
 
     def _marketplace(self):
         return 0
@@ -394,15 +404,13 @@ class CheaperthandirtScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        categories = self.tree_html.xpath("//div[contains(@class,'breadcrumb')]/a/text()")
-
-        return categories[1:]
+        return self.tree_html.xpath("//div[@id='breadcrumb']//a[@itemprop='item']//text()")
 
     def _category_name(self):
         return self._categories()[-1]
     
     def _brand(self):
-        return self.tree_html.xpath("//div[contains(@class,'prodDetailInfo')]//span[@itemprop='brand']//text()")[0].strip()
+        return self.tree_html.xpath("//span[@itemprop='brand']//text()")[0].strip()
 
 
     ##########################################
