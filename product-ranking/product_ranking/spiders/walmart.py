@@ -189,9 +189,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
 
-        # To not redirect randomly
-        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
-        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+        # Disabled, in this moment we use EU Crawlera key, so there is no random redirections
+        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
 
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
