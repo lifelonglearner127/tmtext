@@ -119,7 +119,7 @@ class ZulilyProductsSpider(BaseProductsSpider):
             product['category'] = product['categories'][-1]
 
         # description
-        description = product_json.get("style_data", {}).get("descriptionHtml", None)
+        description = response.xpath("//div[@class='description']").extract()[0]
         cond_set_value(product, 'description', description)
 
         # price
