@@ -12,6 +12,7 @@ import lxml.html
 import requests
 import random
 import yaml
+import urlparse
 from requests.auth import HTTPProxyAuth
 from HTMLParser import HTMLParser
 
@@ -251,10 +252,8 @@ class WalmartScraper(Scraper):
                             '3xx location not found'
                         return
 
-                    url = resp.headers['location']
-
-                    if url.startswith('/'):
-                        url = 'https://www.walmart.com' + url
+                    url = urlparse.urljoin('https://www.walmart.com',
+                        resp.headers['location'])
 
                     resp = self._request(url, allow_redirects=False)
 
@@ -1293,11 +1292,10 @@ class WalmartScraper(Scraper):
             if shelf_description_html and shelf_description_html.strip():
                 return HTMLParser().unescape(shelf_description_html.strip())
 
-        try:
-            self._extract_product_info_json()
-            return self.product_info_json.get('shortDescription')
-        except:
-            pass
+        product_info_json = self._extract_product_info_json()
+
+        if product_info_json:
+            return product_info_json.get('shortDescription')
 
     def _variants(self):
         if self._no_longer_available():
