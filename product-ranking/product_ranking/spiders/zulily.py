@@ -119,7 +119,7 @@ class ZulilyProductsSpider(BaseProductsSpider):
             product['category'] = product['categories'][-1]
 
         # description
-        description = product_json.get("style_data", {}).get("descriptionHtml", None)
+        description = product_json.get("id_json", {}).get("description", None)
         cond_set_value(product, 'description', description)
 
         # price
