@@ -109,24 +109,25 @@ def generate_google_manufacturer_xml(template_env, input_file):
                 raise Exception('Could not convert xml file')
 
             wb = xlrd.open_workbook(filename=input_file_c)
-            item_sheet = wb.sheet_by_name('Sheet1')
-
-            for idx, row in enumerate(item_sheet.get_rows()):
-                if idx == 0:
-                    for i, c in enumerate(row):
-                        ci[c.value] = i
-                else:
-                    data = {
-                        'id': row[ci[MPN]].value if ci[MPN] > -1 else '',
-                        'brand': row[ci[BRAND]].value if ci[BRAND] > -1 else '',
-                        'title': row[ci[TITLE]].value if ci[TITLE] > -1 else '',
-                        'gtin': row[ci[GTIN]].value if ci[GTIN] > -1 else '',
-                        'mpn': row[ci[MPN]].value if ci[MPN] > -1 else '',
-                        'description': row[ci[DESC]].value if ci[DESC] > -1 else '',
-                        'bullet_points': row[ci[L_DESC]].value if ci[L_DESC] > -1 else '',
-                    }
-                    data['bullet_points'] = generate_bullets(data['bullet_points'])
-                    items.append(data)
+            s_names = wb.sheet_names()
+            for sn in s_names:
+                item_sheet = wb.sheet_by_name(sn)
+                for idx, row in enumerate(item_sheet.get_rows()):
+                    if idx == 0:
+                        for i, c in enumerate(row):
+                            ci[c.value] = i
+                    else:
+                        data = {
+                            'id': row[ci[MPN]].value if ci[MPN] > -1 else '',
+                            'brand': row[ci[BRAND]].value if ci[BRAND] > -1 else '',
+                            'title': row[ci[TITLE]].value if ci[TITLE] > -1 else '',
+                            'gtin': row[ci[GTIN]].value if ci[GTIN] > -1 else '',
+                            'mpn': row[ci[MPN]].value if ci[MPN] > -1 else '',
+                            'description': row[ci[DESC]].value if ci[DESC] > -1 else '',
+                            'bullet_points': row[ci[L_DESC]].value if ci[L_DESC] > -1 else '',
+                        }
+                        data['bullet_points'] = generate_bullets(data['bullet_points'])
+                        items.append(data)
     except Exception as e:
         logging_info(str(e), 'ERROR')
         return
