@@ -182,7 +182,7 @@ class EbagsScraper(Scraper):
         return None
 
     def _video_count(self):
-        vides_divs = self.tree_html.xpath("//div[@id='lcthumb']")
+        vides_divs = self.tree_html.xpath("//div[contains(@class,'lcthumbPdp')]")
         if vides_divs:
             return len(vides_divs)
 
@@ -314,7 +314,7 @@ class EbagsScraper(Scraper):
         review_count = re.findall(
             r'\d+',
             self.tree_html.xpath("//div[contains(@class,'pdpRatingsReviews')]"
-                                 "//span[contains(@class,'hilight')]//text()")[0]
+                                 "//span[contains(@class,'hilight')]//text()")[0].replace(",", "")
         )
 
         if review_count:
