@@ -898,29 +898,32 @@ class ScrapyTask(object):
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
 
-        # upload scrapy_daemon logs
-        daemon_logs_zipfile = None
-        try:
-            daemon_logs_zipfile = self._zip_daemon_logs()
-            logger.warning('Got daemon_logs_zipfile: {}'.format(daemon_logs_zipfile))
-        except Exception as e:
-            logger.warning('Could not create daemon ZIP: %s' % str(e))
-        if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
-            # now move and rename the file into output path folder
-            if os.path.exists(output_path+'.daemon.zip'):
-                os.unlink(output_path+'.daemon.zip')
-            try:
-                os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
-            except OSError as e:
-                logger.error('File %r to %r rename error: %s.',
-                             daemon_logs_zipfile, output_path+'.daemon.zip', e)
-            try:
-                put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.daemon.zip',
-                                 compress=False)
-            except Exception as e:
-                logger.warning('Could not upload daemon logs: %s' % str(e))
-            else:
-                logger.warning('Daemon logs uploaded')
+        # upload scrapy_daemon logs - deprecated
+        # no we are uploading
+        # daemon_logs_zipfile = None
+        # try:
+        #     daemon_logs_zipfile = self._zip_daemon_logs()
+        #     logger.warning('Got daemon_logs_zipfile: {}'.format(daemon_logs_zipfile))
+        # except Exception as e:
+        #     logger.warning('Could not create daemon ZIP: %s' % str(e))
+        # if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
+        #     # now move and rename the file into output path folder
+        #     if os.path.exists(output_path+'.daemon.zip'):
+        #         os.unlink(output_path+'.daemon.zip')
+        #     try:
+        #         os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+        #     except OSError as e:
+        #         logger.error('File %r to %r rename error: %s.',
+        #                      daemon_logs_zipfile, output_path+'.daemon.zip', e)
+        #     try:
+        #         put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.daemon.zip',
+        #                          compress=False)
+        #     except Exception as e:
+        #         logger.warning('Could not upload daemon logs: %s' % str(e))
+        #     else:
+        #         logger.warning('Daemon logs uploaded')
+
+
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
         self.task_data['finish_time'] = \
@@ -1887,6 +1890,11 @@ def main():
         logger.info('For task %s, max allowed running time is %ss', (
             _t.task_data.get('task_id'), _t.get_total_wait_time()))
     max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 160
+
+    # Quick fix for rare bug:
+    # 2016-12-15 20:50:34,921 [scrapy_daemon] INFO:Max allowed running time is 86560s
+    max_wait_time = 600 if max_wait_time > 600 else max_wait_time
+    
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
