@@ -480,7 +480,7 @@ def put_file_into_s3(bucket_name, fname, compress=True,
     k.key = folders
     # Add file creation time to metadata
     if is_add_file_time:
-        k.set_metadata('creation_time', get_file_cm_time(filename))
+        k.set_metadata('creation_time', get_file_cm_time(fname))
     try:
         # Upload file to S3
         k.set_contents_from_filename(fname)
@@ -859,7 +859,7 @@ class ScrapyTask(object):
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, jl_results_path,
                         is_add_file_time=True)
-                    logger.info('Screenshot file uploaded: %s' % (jl_results_path))
+                    # logger.info('Screenshot file uploaded: %s' % (jl_results_path))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
                     logger.exception(ex)
@@ -867,7 +867,7 @@ class ScrapyTask(object):
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, url2screenshot_log_path,
                         is_add_file_time=True)
-                    logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
+                    # logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
                 except Exception as ex:
                     logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
@@ -877,7 +877,7 @@ class ScrapyTask(object):
         if CONVERT_TO_CSV:
             try:
                 csv_filepath = convert_json_to_csv(output_path, logger)
-                logger.info('Zip created at: %r.', csv_filepath)
+                logger.info('JSON converted to CSV file created at: %r.', csv_filepath)
                 csv_data_key = put_file_into_s3(
                     AMAZON_BUCKET_NAME, csv_filepath)
             except Exception as e:
@@ -906,7 +906,7 @@ class ScrapyTask(object):
         except Exception as e:
             logger.warning('Could not create daemon ZIP: %s' % str(e))
         if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
-            # now move the file into output path folder
+            # now move and rename the file into output path folder
             if os.path.exists(output_path+'.daemon.zip'):
                 os.unlink(output_path+'.daemon.zip')
             try:
@@ -915,11 +915,12 @@ class ScrapyTask(object):
                 logger.error('File %r to %r rename error: %s.',
                              daemon_logs_zipfile, output_path+'.daemon.zip', e)
             try:
-                put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
+                put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.daemon.zip',
                                  compress=False)
-                logger.warning('Daemon logs uploaded')
             except Exception as e:
                 logger.warning('Could not upload daemon logs: %s' % str(e))
+            else:
+                logger.warning('Daemon logs uploaded')
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
         self.task_data['finish_time'] = \
@@ -1734,7 +1735,7 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
-    # try to get tasks, untill max number of tasks is reached or
+    # try to get tasks, until max number of tasks is reached or
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries and \
             not is_end_billing_instance_time():
@@ -1771,43 +1772,46 @@ def main():
             options['MAX_CONCURRENT_TASKS'] = MAX_CONCURRENT_TASKS
             options['max_tries'] = max_tries
             options['TASK_QUEUE_NAME'] = TASK_QUEUE_NAME
-        if 'url' in task_data and 'searchterms_str' not in task_data \
-                and not 'checkout' in task_data['site']:
-            if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
-                                           # for "light" URL-based jobs
-                MAX_CONCURRENT_TASKS += 1
 
-        if task_data['site'] == 'walmart':
-            task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
-            with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
-            if task_quantity > 600:
-                # decrease num of parallel tasks for "heavy" Walmart jobs
-                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
-                if with_best_seller_ranking:
-                    # decrease max_concurrent_tasks even more if it's BS task
-                    #  which actually runs 2x spiders
+        if is_same_branch(get_branch_for_task(task_data), branch):
+            # job should only change concurrency if it will be taken later
+            # if job is on different branch, it will be skipped later
+            if 'url' in task_data and 'searchterms_str' not in task_data \
+                    and not 'checkout' in task_data['site']:
+                if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
+                                               # for "light" URL-based jobs
+                    MAX_CONCURRENT_TASKS += 1
+            if task_data['site'] == 'walmart':
+                task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
+                with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
+                if task_quantity > 600:
+                    # decrease num of parallel tasks for "heavy" Walmart jobs
                     MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-            elif 300 < task_quantity < 600:
-                # decrease num of parallel tasks for "heavy" Walmart jobs
-                MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
-                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
-                if with_best_seller_ranking:
-                    # decrease max_concurrent_tasks even more if it's BS task
-                    #  which actually runs 2x spiders
+                                ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                    if with_best_seller_ranking:
+                        # decrease max_concurrent_tasks even more if it's BS task
+                        #  which actually runs 2x spiders
+                        MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                        logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                    ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+                elif 300 < task_quantity < 600:
+                    # decrease num of parallel tasks for "heavy" Walmart jobs
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif (task_data['site'] in ('dockers', 'nike', 'costco')) or 'checkout' in task_data['site']:
-            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
-        elif ScrapyTask(None, task_data, None).is_screenshot_job():
-            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
+                                ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                    if with_best_seller_ranking:
+                        # decrease max_concurrent_tasks even more if it's BS task
+                        #  which actually runs 2x spiders
+                        MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
+                        logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                    ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+            elif (task_data['site'] in ('dockers', 'nike', 'costco')) or 'checkout' in task_data['site']:
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
+            elif ScrapyTask(None, task_data, None).is_screenshot_job():
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
@@ -1835,6 +1839,7 @@ def main():
                     restart_scrapy_daemon()
         elif not is_same_branch(get_branch_for_task(task_data), branch):
             # make sure all tasks are in same branch
+            logger.info("Task is in different branch: {}, skipping".format(get_branch_for_task(task_data)))
             queue.reset_message()
             continue
         # Store jobs metrics

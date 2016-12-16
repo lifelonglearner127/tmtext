@@ -8,7 +8,7 @@ import random
 
 main_folder = os.path.expanduser('~/repo/')
 INSTALL_PACKAGES = [
-    'pip', 'Pillow', 'pytesseract', 'requests', 'tldextract', 's3peat', 'boto==2.43.0',
+    'Pillow', 'pytesseract', 'requests', 'tldextract', 's3peat', 'boto==2.43.0',
     'workerpool', 'sqlalchemy', 'psycopg2', 'hjson', 'pyyaml',
     'python-dateutil', 'psutil', 'service_identity', 'mmh3', 'flask',
     'selenium', 'pyvirtualdisplay', 'scrapy_crawlera', 'grequests',
