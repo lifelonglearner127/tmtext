@@ -6,6 +6,7 @@ import xlrd
 from helper import check_extension, logging_info, write_to_file, convert_xls_file
 
 #-------- define column names ------------
+UPC = 'UPC'
 MPN = 'MPN'
 BRAND = 'Brand Name'
 TITLE = 'Item Name'
@@ -13,6 +14,20 @@ GTIN = 'GTIN'
 DESC = 'Description'
 L_DESC = 'Long Description'
 #-----------------------------------------
+
+
+def convert_upc_to_gtin(upc):
+    s_upc = u''
+    if type(upc) == str or type(upc) == unicode:
+        s_upc = upc
+    elif type(upc) == float:
+        s_upc = u'%.f' % upc
+    gtin_code = u''
+    if len(s_upc) <= 14 or len(s_upc) >= 12:
+        gtin_code = s_upc
+    if len(s_upc) == 8:
+        gtin_code = u'0000' + s_upc
+    return gtin_code
 
 
 def generate_bullets(desc):
@@ -97,6 +112,10 @@ def generate_google_manufacturer_xml(template_env, input_file):
                             'bullet_points': item[ci[L_DESC]] if ci[L_DESC] > -1 else '',
                         }
                         data['bullet_points'] = generate_bullets(data['bullet_points'])
+
+                        if data['gtin'] == '':
+                            if ci[UPC] > -1 and item[ci[UPC]] != '':
+                                data['gtin'] = convert_upc_to_gtin(item[ci[UPC]])
                         items.append(data)
         else:    # .xls file
             logging_info('START CONVERSION')
@@ -126,6 +145,9 @@ def generate_google_manufacturer_xml(template_env, input_file):
                         'bullet_points': row[ci[L_DESC]].value if ci[L_DESC] > -1 else '',
                     }
                     data['bullet_points'] = generate_bullets(data['bullet_points'])
+                    if data['gtin'] == '':
+                        if ci[UPC] > -1 and row[ci[UPC]] != '':
+                            data['gtin'] = convert_upc_to_gtin(row[ci[UPC]].value)
                     items.append(data)
     except Exception as e:
         logging_info(str(e), 'ERROR')
