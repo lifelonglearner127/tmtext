@@ -12,7 +12,8 @@ def collect_data(cache):
     context = dict()
     context['executed_tasks'] = cache.get_executed_tasks_count()
     context['total_instances'] = cache.get_today_instances()
-    context['today_jobs'] = cache.get_jobs_stats()
+    context['today_jobs'], context['today_jobs_by_site'] = \
+        cache.get_jobs_stats(with_by_site=True)
     context['today_requests_count'] = cache.get_today_requests()
     if context['today_requests_count'] is None:
         context['today_requests_count'] = 0

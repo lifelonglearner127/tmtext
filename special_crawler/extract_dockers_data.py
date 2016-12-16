@@ -413,7 +413,7 @@ class DockersScraper(Scraper):
         return self.product_json["page"]["page_category"]
 
     def _brand(self):
-        return self.product_json["page"]["brand"]
+        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
 
 
     ##########################################

@@ -236,6 +236,11 @@ class TescoScraper(Scraper):
 
     def _description(self):
         if self.scraper_version == "groceries":
+            hide_text_blocks_in_description = self.tree_html.xpath("//div[@class='detailsWrapper']//h2[@class='hide']")
+
+            for hide_block in hide_text_blocks_in_description:
+                hide_block.getparent().remove(hide_block)
+
             return " ".join(self.tree_html.xpath("//div[@class='detailsWrapper'][1]//text()")).strip()
 
         if self.scraper_version == "version-2":
@@ -645,6 +650,12 @@ class TescoScraper(Scraper):
     ##########################################
     def _temp_price_cut(self):
         if self.tree_html.xpath("//div[@class='price-info']//span[@class='saving']"):
+            return 1
+
+        if self.scraper_version == "groceries" and\
+                self.tree_html.xpath("//a[@class='promotionAlternatives' and "
+                                     "starts-with(@href, '/groceries/specialoffers/specialofferdetail/') and "
+                                     "starts-with(@title, 'Save')]"):
             return 1
 
         return 0

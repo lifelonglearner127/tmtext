@@ -10,7 +10,7 @@ from scrapy import Request, Selector
 from scrapy.log import DEBUG
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value,\
     FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.homedepot_validator import HomedepotValidatorSettings

@@ -32,6 +32,15 @@ Today jobs: {{ today_jobs.term + today_jobs.url }} jobs ({{ today_jobs.term }} s
                 {{ scrapper }}: {{ scrapper_metrics.term + scrapper_metrics.url }} jobs ({{ scrapper_metrics.term }} search terms, {{ scrapper_metrics.url }} product URLs){% endfor %}{% endfor %}
 
 
+Today jobs by site:
+    Search Terms:
+        {% for site, value in today_jobs_by_site.term.items() %}
+            {{ site }}: {{ value }}{% endfor %}
+    URLs:
+        {% for site, value in today_jobs_by_site.url.items() %}
+            {{ site }}: {{ value }}{% endfor %}
+
+
 Urgent queue statistics:
 
 Minimum time in queue: {{ urgent_stats.0 }}s
