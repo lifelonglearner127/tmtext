@@ -154,8 +154,20 @@ def main(environment, scrape_queue_name, thread_id):
                             walmart_proxy_shaderio = walmart_proxy_shaderio,
                             walmart_proxy_luminati = walmart_proxy_luminati)
 
+                        is_valid_url = site_scraper.check_url_format()
+
+                        if hasattr(site_scraper, "INVALID_URL_MESSAGE"):
+                            crawler_service.check_input(url, is_valid_url, site_scraper.INVALID_URL_MESSAGE)
+                        else:
+                            crawler_service.check_input(url, is_valid_url)
+
                         output_json = site_scraper.product_info(lh=lh)
                         lh.add_log('failure_type', output_json.get('failure_type'))
+
+                    except crawler_service.InvalidUsage as e:
+                        logger.warn('Error extracting output json: %s %s' % (type(e), e.to_dict()))
+                        output_json = e.to_dict()
+                        lh.add_log('failure_type', 'invalid url')
 
                     except Exception as e:
                         logger.warn('Error extracting output json: %s %s' % (type(e), e))
@@ -167,6 +179,8 @@ def main(environment, scrape_queue_name, thread_id):
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":loaded_in_seconds}}
+
+                        lh.add_list_log('errors', str(e))
 
                     output_json['attempt'] = i
 
