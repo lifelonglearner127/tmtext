@@ -26,7 +26,7 @@ class CostcoProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.costco.com/CatalogSearch?pageSize=96" \
         "&catalogId=10701&langId=-1&storeId=10301" \
         "&currentPage=1&keyword={search_term}"
-
+    selenium_retries = 5
     DEFAULT_CURRENCY = u'USD'
 
     REVIEW_URL = 'http://api.bazaarvoice.com/data/products.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5&filter=id:{product_id}&stats=reviews'
@@ -49,6 +49,14 @@ class CostcoProductsSpider(BaseProductsSpider):
 
         selenium_html = self._get_page_html_selenium(response.url)
         # TODO might as well use that html to extract other data
+
+        # 5 retries total
+        for x in range(self.selenium_retries):
+            if not selenium_html:
+                selenium_html = self._get_page_html_selenium(response.url)
+            else:
+                break
+
         if selenium_html:
             price = Selector(text=selenium_html).xpath(
                 './/*[contains(@class, "your-price")]/span[@class="value"]/text()').extract()
@@ -288,7 +296,7 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     def _get_page_html_selenium(self, url):
         try:
-            display = Display(visible=False, size=(1280, 768))
+            display = Display(visible=False)
             display.start()
             driver = self._init_chromium()
             driver.set_page_load_timeout(120)
