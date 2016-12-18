@@ -58,7 +58,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
     REVIEW_DATE_URL = 'https://{domain}/product-reviews/{product_id}/' \
                       'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
-                      'sortBy=bySubmissionDateDescending'
+                      'sortBy=bySubmissionDateDescending&reviewerType=all_reviews'
     REVIEW_URL_1 = 'https://{domain}/ss/customer-reviews/ajax/reviews/get/' \
                    'ref=cm_cr_pr_viewopt_sr'
     REVIEW_URL_2 = 'https://{domain}/product-reviews/{product_id}/' \
@@ -1374,7 +1374,8 @@ class AmazonBaseClass(BaseProductsSpider):
                    'showViewpoints=1&' \
                    'sortBy=recent&' \
                    'pageNumber=1&' \
-                   'filterByStar={star}'.format(star=star)
+                   'filterByStar={star}&' \
+                   'formatType=all_formats'.format(star=star)
             url = response.url + args
             meta['_current_star'] = star
             yield Request(
@@ -1411,6 +1412,11 @@ class AmazonBaseClass(BaseProductsSpider):
 
 
     def _get_rating_by_star_by_individual_request(self, response):
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self._get_rating_by_star_by_individual_request
+            )
         reqs = response.meta.get('reqs', [])
         product = response.meta['product']
         mkt_place_link = response.meta.get("mkt_place_link")

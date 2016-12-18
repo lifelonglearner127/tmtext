@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#  -*- coding: utf-8 -*-
 
 import urllib
 import re
@@ -11,19 +12,42 @@ import time
 import requests
 from extract_data import Scraper
 
+def deep_search(needles, haystack):
+    found = {}
+    if type(needles) != type([]):
+        needles = [needles]
 
-class WestmarineScraper(Scraper):
+    if type(haystack) == type(dict()):
+        for needle in needles:
+            if needle in haystack.keys():
+                found[needle] = haystack[needle]
+            elif len(haystack.keys()) > 0:
+                for key in haystack.keys():
+                    result = deep_search(needle, haystack[key])
+                    if result:
+                        for k, v in result.items():
+                            found[k] = v
+    elif type(haystack) == type([]):
+        for node in haystack:
+            result = deep_search(needles, node)
+            if result:
+                for k, v in result.items():
+                    found[k] = v
+    return found
+
+class AhScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.westmarine.com/.*$"
-    BASE_URL_WEBCOLLAGE_CONTENTS = "http://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.ah.nl/.*$"
+    BASE_URL_WEBCOLLAGE_CONTENTS = "http(s)://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        self.embedded_json = None
         self.extracted_webcollage_contents = False
         self.webcollage_contents = None
         self.has_webcollage_360_view = False
@@ -38,7 +62,8 @@ class WestmarineScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.westmarine.com/.*$", self.product_page_url)
+        # http://www.ah.nl/producten/product/wi94782/ah-mandarijnen-net
+        m = re.match(r"^https?://www\.ah\.nl/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -49,9 +74,25 @@ class WestmarineScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        if len(self.tree_html.xpath("//div[@id='primary_image']")) == 0:
+        self.get_embedded_json()
+        try:
+            if self.embedded_json['title']:
+                pass
+        except:
             return True
         return False
+
+    def get_embedded_json(self):
+        if self.embedded_json:
+            return self.embedded_json
+        product_url = self.product_page_url
+        product_url = product_url.replace("http://www.ah.nl", "")
+        a_url = "http://www.ah.nl/service/rest/delegate?url={product_url}"
+        result = requests.get(a_url.format(
+            product_url=product_url.replace("https://www.ah.nl", "")
+            .replace("http://www.ah.nl", ""))).text
+        self.embedded_json = json.loads(result)
+
 
     ##########################################
     ############### CONTAINER : NONE
@@ -79,50 +120,32 @@ class WestmarineScraper(Scraper):
         return "success"
 
 
-
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        arr = self.tree_html.xpath("//h1[@id='productDetailsPageTitle']//text()")
-        name = " ".join(arr)
-        if len(name.strip()) > 0:
-            return name
-        else:
-            return None
+        self.get_embedded_json()
+        value = deep_search(["description"], self.embedded_json)['description']
+        return value
 
     def _product_title(self):
-        arr = self.tree_html.xpath("//h1[@id='productDetailsPageTitle']//text()")
-        name = " ".join(arr)
-        if len(name.strip()) > 0:
-            return name
-        else:
-            return None
+        self.get_embedded_json()
+        value = deep_search(["description"], self.embedded_json)['description']
+        return value
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath(
-            "//div[@id='sku-modelno']//span[contains(@class,'product-modelno')]/text()"
-        )[0].strip()
+        return None
 
     def _upc(self):
         return None
 
     def _features(self):
-        arr = self.tree_html.xpath(
-            "//div[@id='tab-spec']//div[contains(@class,'productFeatureClasses')]//td//text()"
-        )
-        features_list = []
-        i = 0
-        for r in arr:
-            row = "%s: %s" % (arr[i], arr[i+1])
-            features_list.append(row)
-            i += 2
+        self.get_embedded_json()
+        features = deep_search("features", self.embedded_json)["features"]
+        features_list = [r['text'] for r in features]
 
         if features_list:
             return features_list
@@ -139,34 +162,9 @@ class WestmarineScraper(Scraper):
         return None
 
     def _description(self):
-        arr = self.tree_html.xpath(
-            "//div[contains(@class,'productDescription') and contains(@class,'content-type')]"
-            "/*[not(contains(@class, 'rebate-block'))]//text()"
-        )
-        if len(arr) < 1:
-            arr = self.tree_html.xpath(
-                "//div[contains(@class,'productDescription') and contains(@class,'content-type')]//text()"
-            )
-        arr = [r.strip() for r in arr if len(r.strip())>0]
-        short_description = " ".join(arr)
-
-        if short_description:
-            return short_description
-        else:
-            return None
-
-    def long_description_help(self):
-        arr = self.tree_html.xpath(
-            "//div[@id='tab-details']"
-            "//div[contains(@class,'productDescription')]//text()"
-        )
-        arr = [r.strip() for r in arr if len(r.strip())>0]
-        long_description = " ".join(arr)
-
-        if long_description:
-            return long_description
-
-        return None
+        self.get_embedded_json()
+        value = deep_search(["summary"], self.embedded_json)['summary']
+        return value
 
     def _long_description(self):
         return None
@@ -178,12 +176,14 @@ class WestmarineScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_list = self.tree_html.xpath(
-            "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@data-primaryimagesrc"
-        )
-        if len(image_list) < 1:
-            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
-        image_list = ["http:" + r for r in image_list]
+        self.get_embedded_json()
+        arr = deep_search(["images"], self.embedded_json)['images']
+        image_list = []
+        if len(arr) > 1:
+            image_list.append(arr[1]['link']['href'])
+        else:
+            image_list.append(arr[0]['link']['href'])
+
         return image_list
 
     def _image_count(self):
@@ -193,19 +193,6 @@ class WestmarineScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_list = self.tree_html.xpath("//video[contains(@class,'span-video')]/a[contains(@class,'video-colorbox')]/@src")
-
-        if not video_list:
-            video_list = []
-
-        self._wc_video()
-
-        if self.webcollage_videos:
-            video_list.extend(self.webcollage_videos)
-
-        if video_list:
-            return video_list
-
         return None
 
     def _video_count(self):
@@ -217,11 +204,6 @@ class WestmarineScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
-        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
-
-        if pdf_links:
-            return pdf_links
-
         return None
 
     def _pdf_count(self):
@@ -333,60 +315,33 @@ class WestmarineScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        if self._review_count() > 0:
-            return float(self.tree_html.xpath("//span[@class='pr-rating pr-rounded average']/text()")[0])
-
         return None
 
     def _review_count(self):
-        review_count = self.tree_html.xpath("//p[@class='pr-snapshot-average-based-on-text']/span[@class='count']/text()")
-
-        if review_count:
-            return int(review_count[0])
-
         return 0
 
     def _max_review(self):
-        reviews = self._reviews()
-
-        if reviews:
-            for review in reviews:
-                if review[1] > 0:
-                    return review[0]
-
         return None
 
     def _min_review(self):
-        reviews = self._reviews()
-
-        if reviews:
-            for review in reversed(reviews):
-                if review[1] > 0:
-                    return review[0]
-
         return None
 
     def _reviews(self):
-        if self._review_count() > 0:
-            rating_mark_list = self.tree_html.xpath("//p[@class='pr-histogram-count']/span/text()")[:5]
-            rating_mark_list = [int(count[1:-1]) for count in rating_mark_list]
-            rating_mark_list = [[5 - index, count] for index, count in enumerate(rating_mark_list)]
-
-            return rating_mark_list
-
         return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[contains(@class,'price-info-block')]//p[contains(@class,'regularPrice')]//text()")[0].strip()
+        self.get_embedded_json()
+        value = deep_search(["priceLabel"], self.embedded_json)['priceLabel']['now']
+        return value
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        return float(self._price() )
 
     def _price_currency(self):
-        return "USD"
+        return "EUR"
 
     def _in_stores(self):
         return 1
@@ -398,7 +353,11 @@ class WestmarineScraper(Scraper):
         return 0
 
     def _in_stores_out_of_stock(self):
-        return 0
+        self.get_embedded_json()
+        value = deep_search(["availability"], self.embedded_json)['availability']['orderable']
+        if value:
+            return 0
+        return 1
 
     def _marketplace(self):
         return 0
@@ -420,32 +379,18 @@ class WestmarineScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        categories = self.tree_html.xpath("//div[@id='breadcrumb']//li/a/text()")
-
-        return categories[1:]
-
+        self.get_embedded_json()
+        arr = deep_search(["categoryName"], self.embedded_json)['categoryName'].split('/')
+        return arr[:-1]
     def _category_name(self):
-        return self._categories()[-1]
+        self.get_embedded_json()
+        arr = deep_search(["categoryName"], self.embedded_json)['categoryName'].split('/')
+        return arr[-1]
     
     def _brand(self):
-        try:
-            data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
-            )
-            brand = data["brand"]["name"]
-            return brand
-        except:
-            return None
-
-    def _mfg(self):
-        try:
-            data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
-            )
-            mfg = data["mpn"]
-            return mfg
-        except:
-            return None
+        self.get_embedded_json()
+        value = deep_search(["brandName"], self.embedded_json)['brandName']
+        return value
 
     ##########################################
     ################ HELPER FUNCTIONS##########################################
@@ -522,8 +467,6 @@ class WestmarineScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-        "mfg" : _mfg, \
-
 
 
         "loaded_in_seconds" : None, \

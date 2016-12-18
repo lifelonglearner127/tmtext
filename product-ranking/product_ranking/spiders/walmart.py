@@ -189,9 +189,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
 
-        # To not redirect randomly
-        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
-        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+        # Disabled, in this moment we use EU Crawlera key, so there is no random redirections
+        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
 
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
@@ -912,6 +912,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
         elif '&amp;' in brand:
             brand = brand.replace('&amp;', "&")
+        brand = brand.replace('\ufffd','')
         cond_set_value(product, 'brand', brand)
 
         try:
@@ -931,6 +932,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
                 " | //h1[@class='productTitle']/text()"
             ).extract())
+            brand = brand.replace('\ufffd', '')
             cond_set(
                 product,
                 'brand',
@@ -1197,7 +1199,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
-        return selected_product.get('productAttributes', {}).get('brand')
+        brand = selected_product.get('productAttributes', {}).get('brand')
+        brand = brand.replace('\ufffd', '')
+        return brand
 
     @staticmethod
     def _parse_title_alternative(selected_product):
@@ -1456,10 +1460,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             pass
 
         try:
+            brand = data['analyticsData']['brand']
+            brand = brand.replace('\ufffd', '')
             cond_set_value(
                 product,
                 'brand',
-                data['analyticsData']['brand'],
+                brand,
                 conv=unicode)
         except KeyError:
             pass
@@ -1592,12 +1598,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if not data:
             if not product.get('buyer_reviews') or\
                             product.get('buyer_reviews') == 0:
-                new_meta = response.meta.copy()
-                return Request(url=self.REVIEW_URL.format(
-                    product_id=response.meta['product_id']),
-                               callback=self._build_buyer_reviews_old,
-                               meta=new_meta,
-                               dont_filter=True)
+                pass
             else:
                 return product
         last_date = product.get('date_of_last_question')
@@ -1628,11 +1629,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             product['date_of_last_question'] = str(last_date)
         if not product.get('buyer_reviews') or \
                         product.get('buyer_reviews') == 0:
-            new_meta = response.meta.copy()
-            return Request(url=self.REVIEW_URL.format(
-                product_id=response.meta['product_id']),
-                           callback=self._build_buyer_reviews_old,
-                           meta=new_meta, dont_filter=True)
+            pass
         else:
             if 'buyer_reviews' in product.keys():
                 new_meta = response.meta.copy()

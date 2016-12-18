@@ -12,13 +12,13 @@ import requests
 from extract_data import Scraper
 
 
-class WestmarineScraper(Scraper):
+class AuchanfrScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.westmarine.com/.*$"
+    INVALID_URL_MESSAGE = "Expected URL format is https://www.auchan.fr/.*$"
     BASE_URL_WEBCOLLAGE_CONTENTS = "http://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
@@ -32,13 +32,16 @@ class WestmarineScraper(Scraper):
         self.has_webcollage_pdf = False
         self.has_webcollage_product_tour_view = False
         self.webcollage_videos = []
+        self.review_count = None
+        self.average_review = None
+        self.reviews = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.westmarine.com/.*$", self.product_page_url)
+        m = re.match(r"^https://www.auchan.fr/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -49,8 +52,9 @@ class WestmarineScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        if len(self.tree_html.xpath("//div[@id='primary_image']")) == 0:
+        if len(self.tree_html.xpath("//div[@id='primary_image']")) < 1:
             return True
+
         return False
 
     ##########################################
@@ -69,7 +73,7 @@ class WestmarineScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//input[@name="productId"]/@value')[0]
+        product_id = self.tree_html.xpath("//label[@id='prod_Reference']/text()")[0].strip()
         return product_id
 
     def _site_id(self):
@@ -87,43 +91,28 @@ class WestmarineScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        arr = self.tree_html.xpath("//h1[@id='productDetailsPageTitle']//text()")
-        name = " ".join(arr)
-        if len(name.strip()) > 0:
-            return name
-        else:
-            return None
+        return self.tree_html.xpath("//div[contains(@class,'pdp_title')]//h1/text()")[0].strip()
 
     def _product_title(self):
-        arr = self.tree_html.xpath("//h1[@id='productDetailsPageTitle']//text()")
-        name = " ".join(arr)
-        if len(name.strip()) > 0:
-            return name
-        else:
-            return None
+        return self.tree_html.xpath("//div[contains(@class,'pdp_title')]//h1/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//div[contains(@class,'pdp_title')]//h1/text()")[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath(
-            "//div[@id='sku-modelno']//span[contains(@class,'product-modelno')]/text()"
-        )[0].strip()
-
-    def _upc(self):
         return None
 
-    def _features(self):
-        arr = self.tree_html.xpath(
-            "//div[@id='tab-spec']//div[contains(@class,'productFeatureClasses')]//td//text()"
-        )
-        features_list = []
-        i = 0
-        for r in arr:
-            row = "%s: %s" % (arr[i], arr[i+1])
-            features_list.append(row)
-            i += 2
+    def _upc(self):
+        return self.tree_html.xpath("//p[@class='upc']/span[@class='value']/text()")[0].strip()
 
+    def _features(self):
+        lis = self.tree_html.xpath("//div[contains(@class, 'tab-technical-description')]//ul/li")
+        features_list = []
+        for li in lis:
+            feature = li.xpath(".//text()")
+            feature = [r.strip() for r in feature if len(r.strip())>0]
+            feature = ' '.join(feature)
+            features_list.append(feature)
         if features_list:
             return features_list
 
@@ -139,37 +128,16 @@ class WestmarineScraper(Scraper):
         return None
 
     def _description(self):
-        arr = self.tree_html.xpath(
-            "//div[contains(@class,'productDescription') and contains(@class,'content-type')]"
-            "/*[not(contains(@class, 'rebate-block'))]//text()"
-        )
-        if len(arr) < 1:
-            arr = self.tree_html.xpath(
-                "//div[contains(@class,'productDescription') and contains(@class,'content-type')]//text()"
-            )
-        arr = [r.strip() for r in arr if len(r.strip())>0]
-        short_description = " ".join(arr)
+        short_description = self.tree_html.xpath("//div[@id='ProductDescriptionTabComponent']//div[contains(@class, 'productDescription')]//text()")[0].strip()
 
         if short_description:
             return short_description
-        else:
-            return None
-
-    def long_description_help(self):
-        arr = self.tree_html.xpath(
-            "//div[@id='tab-details']"
-            "//div[contains(@class,'productDescription')]//text()"
-        )
-        arr = [r.strip() for r in arr if len(r.strip())>0]
-        long_description = " ".join(arr)
-
-        if long_description:
-            return long_description
 
         return None
 
     def _long_description(self):
         return None
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -178,13 +146,16 @@ class WestmarineScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_list = self.tree_html.xpath(
-            "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@data-primaryimagesrc"
-        )
-        if len(image_list) < 1:
-            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
-        image_list = ["http:" + r for r in image_list]
-        return image_list
+        image_list = self.tree_html.xpath("//ul[@id='carousel_alternate']/li//img/@data-primaryimagesrc")
+
+        if image_list:
+            return image_list
+        elif self.tree_html.xpath("//div[@id='primary_image']//a/img/@src"):
+            main_image_url = self.tree_html.xpath("//div[@id='primary_image']//a/img/@src")
+
+            return main_image_url
+
+        return None
 
     def _image_count(self):
         if self._image_urls():
@@ -193,7 +164,10 @@ class WestmarineScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_list = self.tree_html.xpath("//video[contains(@class,'span-video')]/a[contains(@class,'video-colorbox')]/@src")
+        video_list = []
+
+        for index, url in video_list:
+            video_list[index] = "http:" + video_list[index]
 
         if not video_list:
             video_list = []
@@ -333,17 +307,13 @@ class WestmarineScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        if self._review_count() > 0:
-            return float(self.tree_html.xpath("//span[@class='pr-rating pr-rounded average']/text()")[0])
-
-        return None
+        reviews = self._reviews()
+        return self.average_review
 
     def _review_count(self):
-        review_count = self.tree_html.xpath("//p[@class='pr-snapshot-average-based-on-text']/span[@class='count']/text()")
-
-        if review_count:
-            return int(review_count[0])
-
+        reviews = self._reviews()
+        if self.review_count:
+            return self.review_count
         return 0
 
     def _max_review(self):
@@ -367,26 +337,40 @@ class WestmarineScraper(Scraper):
         return None
 
     def _reviews(self):
-        if self._review_count() > 0:
-            rating_mark_list = self.tree_html.xpath("//p[@class='pr-histogram-count']/span/text()")[:5]
-            rating_mark_list = [int(count[1:-1]) for count in rating_mark_list]
-            rating_mark_list = [[5 - index, count] for index, count in enumerate(rating_mark_list)]
+        if self.reviews:
+            return self.reviews
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        # https://api.bazaarvoice.com/data/batch.json?passkey=syzh21yn6lf39vjo00ndkig63&apiversion=5.5&displaycode=6073-fr_fr&resource.q0=products&filter.q0=id:eq:CA28549&stats.q0=reviews
+        review_URL = "https://api.bazaarvoice.com/data/batch.json?" \
+                     "passkey=syzh21yn6lf39vjo00ndkig63&apiversion=5.5&" \
+                     "displaycode=6073-fr_fr&" \
+                     "resource.q0=products&" \
+                     "filter.q0=id:eq:%s&" \
+                     "stats.q0=reviews" % self._product_id()
+        contents = requests.get(review_URL, headers=h).text
+        data = json.loads(contents)
+        data = data["BatchedResults"]["q0"]["Results"][0]["ReviewStatistics"]
+        self.review_count = data["TotalReviewCount"]
+        self.average_review = data["AverageOverallRating"]
 
-            return rating_mark_list
+        rating_mark_list = []
+        for item in data["RatingDistribution"]:
+            rating_mark_list.append([item["RatingValue"], item["Count"]])
 
-        return None
+        return rating_mark_list
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[contains(@class,'price-info-block')]//p[contains(@class,'regularPrice')]//text()")[0].strip()
+        return self.tree_html.xpath("//span[@id='priceValue']//meta[@itemprop='price']/@content")[0].strip()
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        price_amount = self.tree_html.xpath("//span[@id='priceValue']//meta[@itemprop='price']/@content")[0].strip()
+        return float(price_amount.replace(',', ''))
 
     def _price_currency(self):
-        return "USD"
+        return self.tree_html.xpath('//meta[@itemprop="priceCurrency"]/@content')[0]
 
     def _in_stores(self):
         return 1
@@ -420,35 +404,18 @@ class WestmarineScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        categories = self.tree_html.xpath("//div[@id='breadcrumb']//li/a/text()")
-
-        return categories[1:]
+        return self.tree_html.xpath("//div[@id='breadcrumb']//a[@itemprop='item']//text()")
 
     def _category_name(self):
         return self._categories()[-1]
     
     def _brand(self):
-        try:
-            data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
-            )
-            brand = data["brand"]["name"]
-            return brand
-        except:
-            return None
+        return self.tree_html.xpath("//span[@itemprop='brand']//text()")[0].strip()
 
-    def _mfg(self):
-        try:
-            data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
-            )
-            mfg = data["mpn"]
-            return mfg
-        except:
-            return None
 
     ##########################################
-    ################ HELPER FUNCTIONS##########################################
+    ################ HELPER FUNCTIONS
+    ##########################################
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
@@ -522,7 +489,6 @@ class WestmarineScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-        "mfg" : _mfg, \
 
 
 
