@@ -48,6 +48,8 @@ class CostcoProductsSpider(BaseProductsSpider):
         reqs = []
         meta['reqs'] = reqs
 
+        # TODO since response.body is already downloaded by scrapy
+        # may try to run it in selenium instead of downloading the page again
         selenium_html = self._get_page_html_selenium(response.url)
         # TODO might as well use that html to extract other data
 
