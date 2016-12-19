@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Converter API</title>
+</head>
+<body>
+    <h1>API</h1>
+    <p>Send POST requests to /converter/api to use the API.</p>
+    <p>Each POST request should contain the following values:</p>
+    input_type = request.form.get('input_type', None)
+    input_file = request.files.get('input_file', None)
+    mapping_file = request.files.get('mapping_file', None)
+    output_type = request.form.get('output_type', None)
+    <ul>
+        <li><b>input_type</b> - Input file type ( available types: "amazon", "template" )</li>
+        <li><b>input_file</b> - Input file</li>
+        <li><b>mapping_file</b> - Additional file that will be used on conversion</li>
+        <li><b>output_type</b> - Output file type ( available types: "walmart", "googlemanufacturer" )</li>
+    </ul>
+
+    <p><b>Important : </b> Make sure you're submitting the form with <i>enctype=multipart/form-data</i>.</p>
+    <p><b>Important : </b> available conversions amazon->walmart, template->googlemanufacturer</p>
+
+    <p>The server will return a response after you submit a file.
+       The response would be <i>{"status": "success"}</i> if the conversion finished successfully,
+        or the error description otherwise.
+    </p>
+
+</body>
+</html>

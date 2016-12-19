@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#  -*- coding: utf-8 -*-
 
 import urllib
 import re
@@ -10,21 +11,43 @@ from ast import literal_eval
 import time
 import requests
 from extract_data import Scraper
-from collections import Counter
 
+def deep_search(needles, haystack):
+    found = {}
+    if type(needles) != type([]):
+        needles = [needles]
 
-class CheaperthandirtScraper(Scraper):
+    if type(haystack) == type(dict()):
+        for needle in needles:
+            if needle in haystack.keys():
+                found[needle] = haystack[needle]
+            elif len(haystack.keys()) > 0:
+                for key in haystack.keys():
+                    result = deep_search(needle, haystack[key])
+                    if result:
+                        for k, v in result.items():
+                            found[k] = v
+    elif type(haystack) == type([]):
+        for node in haystack:
+            result = deep_search(needles, node)
+            if result:
+                for k, v in result.items():
+                    found[k] = v
+    return found
+
+class AhScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://www.cheaperthandirt.com/product/.*$"
-    BASE_URL_WEBCOLLAGE_CONTENTS = "https://www.cheaperthandirt.com/product/.*$"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.ah.nl/.*$"
+    BASE_URL_WEBCOLLAGE_CONTENTS = "http(s)://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        self.embedded_json = None
         self.extracted_webcollage_contents = False
         self.webcollage_contents = None
         self.has_webcollage_360_view = False
@@ -39,7 +62,8 @@ class CheaperthandirtScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^https://www.cheaperthandirt.com/product/.*$", self.product_page_url)
+        # http://www.ah.nl/producten/product/wi94782/ah-mandarijnen-net
+        m = re.match(r"^https?://www\.ah\.nl/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -50,14 +74,25 @@ class CheaperthandirtScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+        self.get_embedded_json()
         try:
-            if len(self.tree_html.xpath('//div[@id="detailViewContainer"]')) == 0:
-                raise Exception()
-
-        except Exception:
+            if self.embedded_json['title']:
+                pass
+        except:
             return True
-
         return False
+
+    def get_embedded_json(self):
+        if self.embedded_json:
+            return self.embedded_json
+        product_url = self.product_page_url
+        product_url = product_url.replace("http://www.ah.nl", "")
+        a_url = "http://www.ah.nl/service/rest/delegate?url={product_url}"
+        result = requests.get(a_url.format(
+            product_url=product_url.replace("https://www.ah.nl", "")
+            .replace("http://www.ah.nl", ""))).text
+        self.embedded_json = json.loads(result)
+
 
     ##########################################
     ############### CONTAINER : NONE
@@ -75,7 +110,7 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.findall(r':(\d+)', self.tree_html.xpath('//div[@id="productData"]/@data-product-id')[0])[0]
+        product_id = self.tree_html.xpath('//input[@name="productId"]/@value')[0]
         return product_id
 
     def _site_id(self):
@@ -85,29 +120,36 @@ class CheaperthandirtScraper(Scraper):
         return "success"
 
 
-
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@id="h1Title1"]/text()')[0].strip()
+        self.get_embedded_json()
+        value = deep_search(["description"], self.embedded_json)['description']
+        return value
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@id="h1Title1"]/text()')[0].strip()
+        self.get_embedded_json()
+        value = deep_search(["description"], self.embedded_json)['description']
+        return value
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@id="h1Title1"]/text()')[0].strip()
+        return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath('//div[contains(@class,"prodDetailInfo")]//span[contains(@class,"itemUpc")]/text()')[0].strip()
+        return None
 
     def _features(self):
+        self.get_embedded_json()
+        features = deep_search("features", self.embedded_json)["features"]
+        features_list = [r['text'] for r in features]
+
+        if features_list:
+            return features_list
+
         return None
 
     def _feature_count(self):
@@ -120,16 +162,12 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _description(self):
-        short_description = self.tree_html.xpath('//span[@itemprop="description"]/text()')[0].strip()
-
-        if short_description:
-            return short_description
-
-        return None
+        self.get_embedded_json()
+        value = deep_search(["summary"], self.embedded_json)['summary']
+        return value
 
     def _long_description(self):
         return None
-
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -138,14 +176,15 @@ class CheaperthandirtScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_list = self.tree_html.xpath("//div[@id='pdpGallery']//a[contains(@class,'rsImg')]/@href")
-        if image_list:
-            return image_list
-        elif self.tree_html.xpath("//div[contains(@class,'rsContainer')]//img[contains(@class,'rsMainSlideImage')]/@src"):
-            main_image_url = self.tree_html.xpath("//div[contains(@class,'rsContainer')]//img[contains(@class,'rsMainSlideImage')]/@src")
-            return main_image_url
+        self.get_embedded_json()
+        arr = deep_search(["images"], self.embedded_json)['images']
+        image_list = []
+        if len(arr) > 1:
+            image_list.append(arr[1]['link']['href'])
+        else:
+            image_list.append(arr[0]['link']['href'])
 
-        return None
+        return image_list
 
     def _image_count(self):
         if self._image_urls():
@@ -154,16 +193,6 @@ class CheaperthandirtScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_list = []
-
-        self._wc_video()
-
-        if self.webcollage_videos:
-            video_list.extend(self.webcollage_videos)
-
-        if video_list:
-            return video_list
-
         return None
 
     def _video_count(self):
@@ -175,11 +204,6 @@ class CheaperthandirtScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
-        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
-
-        if pdf_links:
-            return pdf_links
-
         return None
 
     def _pdf_count(self):
@@ -291,67 +315,33 @@ class CheaperthandirtScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        reviews = self._reviews()
-        if reviews:
-            return self.average_review
         return None
 
     def _review_count(self):
-        review_count = re.findall(r'(\d+)', self.tree_html.xpath('//div[contains(@class,"reviewTotals")]/text()')[0].strip())
-
-        if review_count:
-            return int(review_count[0])
-
         return 0
 
     def _max_review(self):
-        reviews = self._reviews()
-
-        if reviews:
-            for review in reviews:
-                if review[1] > 0:
-                    return review[0]
-
         return None
 
     def _min_review(self):
-        reviews = self._reviews()
-
-        if reviews:
-            for review in reversed(reviews):
-                if review[1] > 0:
-                    return review[0]
-
         return None
 
     def _reviews(self):
-        scores = self.tree_html.xpath('//div[contains(@class,"reviewGroup")]'
-                                      '//div[contains(@class,"snippetStars")]'
-                                      '//span[contains(@class,"snippetRatingDecimal")]//text()')
-        if len(scores) < 1:
-            return None
-        scores = [int(float(r)) for r in scores]
-        self.average_review = sum(scores)*1.0/len(scores)
-        rating_mark_dict = Counter(scores)
-        rating_mark_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
-        rating_mark_list_new = []
-        for item in rating_mark_list:
-            if rating_mark_dict[item[0]] > 0:
-                item[1] = rating_mark_dict[item[0]]
-            rating_mark_list_new.append(item)
-        return rating_mark_list_new
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//*[@id='productPricing']//span[contains(@class,'pricesale')]//text()")[0].strip()
+        self.get_embedded_json()
+        value = deep_search(["priceLabel"], self.embedded_json)['priceLabel']['now']
+        return value
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        return float(self._price() )
 
     def _price_currency(self):
-        return "USD"
+        return "EUR"
 
     def _in_stores(self):
         return 1
@@ -360,19 +350,14 @@ class CheaperthandirtScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        try:
-            str = self.tree_html.xpath("//form[@id='mainForm']//span[contains(@class,'messagealert')]//text()")[0]
-            if "regret that this item is not available at this time" in str:
-                return 1
-        except:
-            pass
-
-        if len(self.tree_html.xpath("//button[@name='addToBasket']")) < 1:
-            return 1
         return 0
 
     def _in_stores_out_of_stock(self):
-        return None
+        self.get_embedded_json()
+        value = deep_search(["availability"], self.embedded_json)['availability']['orderable']
+        if value:
+            return 0
+        return 1
 
     def _marketplace(self):
         return 0
@@ -394,20 +379,21 @@ class CheaperthandirtScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        categories = self.tree_html.xpath("//div[contains(@class,'breadcrumb')]/a/text()")
-
-        return categories[1:]
-
+        self.get_embedded_json()
+        arr = deep_search(["categoryName"], self.embedded_json)['categoryName'].split('/')
+        return arr[:-1]
     def _category_name(self):
-        return self._categories()[-1]
+        self.get_embedded_json()
+        arr = deep_search(["categoryName"], self.embedded_json)['categoryName'].split('/')
+        return arr[-1]
     
     def _brand(self):
-        return self.tree_html.xpath("//div[contains(@class,'prodDetailInfo')]//span[@itemprop='brand']//text()")[0].strip()
-
+        self.get_embedded_json()
+        value = deep_search(["brandName"], self.embedded_json)['brandName']
+        return value
 
     ##########################################
-    ################ HELPER FUNCTIONS
-    ##########################################
+    ################ HELPER FUNCTIONS##########################################
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
@@ -481,7 +467,6 @@ class CheaperthandirtScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
 
 
         "loaded_in_seconds" : None, \
