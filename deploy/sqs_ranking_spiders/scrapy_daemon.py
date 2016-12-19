@@ -885,8 +885,6 @@ class ScrapyTask(object):
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
 
-        # upload scrapy_daemon logs - deprecated
-
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
         self.task_data['finish_time'] = \
@@ -1744,8 +1742,8 @@ def main():
             # if job is on different branch, it will be skipped later
             if 'url' in task_data and 'searchterms_str' not in task_data \
                     and not 'checkout' in task_data['site']:
-                if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
-                                               # for "light" URL-based jobs
+                if MAX_CONCURRENT_TASKS < 70:
+                    # increase num of parallel jobs for "light" URL-based jobs
                     MAX_CONCURRENT_TASKS += 1
             if task_data['site'] == 'walmart':
                 task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
