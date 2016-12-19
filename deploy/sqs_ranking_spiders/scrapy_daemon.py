@@ -676,16 +676,6 @@ class ScrapyTask(object):
         if self.current_signal:
             s += self.current_signal[1]['wait']
 
-        # This is needed when there are low number of jobs, so
-        # Already handled in other place
-        # if self.is_screenshot_job():
-        #     output_path = self.get_output_path()
-        #     jl_results_path = output_path + '.screenshot.jl'
-        #     if not os.path.exists(jl_results_path) or os.path.exists(
-        #             jl_results_path) and not os.path.getsize(jl_results_path):
-        #         logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
-        #         # screenshot task not finished yet? add 90 seconds to max wait time
-        #         s += 90
         return s
 
     def _dispose(self):
@@ -700,7 +690,7 @@ class ScrapyTask(object):
             except OSError as e:
                 logger.error('OSError: %s', e)
         if self.process and self.process.poll() is None:
-            logger.warning('Trying to dispose process: {}'.format(self.process.pid))
+            logger.info('Trying to dispose process: {}'.format(self.process.pid))
             try:
                 os.killpg(os.getpgid(self.process.pid), 9)
             except OSError as e:
@@ -792,7 +782,7 @@ class ScrapyTask(object):
         zips all log giles, found in the /tmp dir to the output_fname
         """
         log_files = list(self._get_daemon_logs_files())
-        logger.warning('Trying to zip all daemon log files, got log_files: {}'.format(log_files))
+        logger.info('Trying to zip all daemon log files, got log_files: {}'.format(log_files))
         if os.path.exists(output_fname):
             os.unlink(output_fname)
         compress_multiple_files(output_fname, log_files)
@@ -859,7 +849,6 @@ class ScrapyTask(object):
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, jl_results_path,
                         is_add_file_time=True)
-                    # logger.info('Screenshot file uploaded: %s' % (jl_results_path))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
                     logger.exception(ex)
@@ -867,7 +856,6 @@ class ScrapyTask(object):
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, url2screenshot_log_path,
                         is_add_file_time=True)
-                    # logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
                 except Exception as ex:
                     logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
