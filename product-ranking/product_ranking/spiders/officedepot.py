@@ -514,7 +514,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             'a[contains(@class, "med_txt")]/@href'
         ).extract() or response.css('.desc_text a::attr("href")').extract()
         # Scraper was redirected to product page instead of search results page
-        if not items and "http://www.officedepot.com/a/products" in response.url:
+        if not items and "officedepot.com/a/products" in response.url:
             prod = SiteProductItem(search_redirected_to_product=True)
             req = Request(response.url, callback=self.parse_product, dont_filter=True)
             req.meta["remaining"] = 0
