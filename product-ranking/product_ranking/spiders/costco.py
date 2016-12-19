@@ -17,6 +17,7 @@ import os
 import time
 import socket
 from scrapy.selector import Selector
+import traceback
 
 class CostcoProductsSpider(BaseProductsSpider):
     name = "costco_products"
@@ -50,8 +51,7 @@ class CostcoProductsSpider(BaseProductsSpider):
         selenium_html = self._get_page_html_selenium(response.url)
         # TODO might as well use that html to extract other data
 
-        # 5 retries total
-        for x in range(self.selenium_retries):
+        for x in range(self.selenium_retries - 1):
             if not selenium_html:
                 selenium_html = self._get_page_html_selenium(response.url)
             else:
@@ -101,39 +101,6 @@ class CostcoProductsSpider(BaseProductsSpider):
                     './/*[contains(text(), "Brand:")]/following-sibling::text()[1]').extract()
             brand = brand[0].strip() if brand else None
             cond_set_value(prod, 'brand', brand)
-        # This isn't working anymore
-        # merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
-        # price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
-        # configured_price_html = response.xpath(
-        #     '//span[contains(text(),"Configured Price")]')
-        #
-        # if configured_price_html:
-        #     configured_price = configured_price_html.xpath(
-        #         'following-sibling::span[@class="currency"]'
-        #         '/text()').re('[\d\.\,]+')
-        #     if configured_price:
-        #         cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                             price=configured_price[0]))
-        #
-        # elif merchandising_price:
-        #     diff_price = str(float(price_value) + float(merchandising_price[0].replace(',','')))
-        #     cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                             price=diff_price))
-        #
-        #     cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                                             price=price_value))
-        # else:
-        #     price_without_discount = ''.join(response.xpath('//*[@class="online-price"]/span[@class="currency"]/text()').re('[\d\.\,]+')).strip().replace(',','')
-        #     if price_value:
-        #         if price_without_discount:
-        #             cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                                 price=price_without_discount))
-        #             cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                                                 price=price_value))
-        #         else:
-        #             cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                                 price=price_value))
-
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
         des = ' '.join(i.strip() for i in des)
@@ -308,8 +275,8 @@ class CostcoProductsSpider(BaseProductsSpider):
             page_html = driver.page_source
             driver.quit()
         except Exception as e:
-            self.log('Exception while getting page html with selenium: ' + str(e), WARNING)
-            return None
+            self.log('Exception while getting page html with selenium: {}'.format(e), WARNING)
+            self.log('### Traceback: {}'.format(traceback.format_exc()), WARNING)
         else:
             return page_html
 
