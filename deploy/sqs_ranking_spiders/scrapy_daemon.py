@@ -1787,7 +1787,7 @@ def main():
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                                 ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
+        elif (task_data['site'] in ('dockers', 'nike', 'costco')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
         elif ScrapyTask(None, task_data, None).is_screenshot_job():
