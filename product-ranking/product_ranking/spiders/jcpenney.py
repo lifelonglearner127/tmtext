@@ -117,11 +117,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
-        # settings.overrides['CRAWLERA_ENABLED'] = True
-        # default_headers = settings.get('DEFAULT_REQUEST_HEADERS')
-        # default_headers['X-Crawlera-UA'] = 'pass'
-        # default_headers['X-Forwarded-For'] = '127.0.0.1'
-        # settings.overrides['DEFAULT_REQUEST_HEADERS'] = default_headers
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
         self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'
 
     def start_requests(self):
