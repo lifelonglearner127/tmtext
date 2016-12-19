@@ -882,35 +882,10 @@ class ScrapyTask(object):
                          data_key, logs_key)
         # TODO Fix spider stderr output
         logger.info("Spider default output:\n%s",
-                    # self.process.stderr.read(),
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
 
         # upload scrapy_daemon logs - deprecated
-        # no we are uploading
-        # daemon_logs_zipfile = None
-        # try:
-        #     daemon_logs_zipfile = self._zip_daemon_logs()
-        #     logger.warning('Got daemon_logs_zipfile: {}'.format(daemon_logs_zipfile))
-        # except Exception as e:
-        #     logger.warning('Could not create daemon ZIP: %s' % str(e))
-        # if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
-        #     # now move and rename the file into output path folder
-        #     if os.path.exists(output_path+'.daemon.zip'):
-        #         os.unlink(output_path+'.daemon.zip')
-        #     try:
-        #         os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
-        #     except OSError as e:
-        #         logger.error('File %r to %r rename error: %s.',
-        #                      daemon_logs_zipfile, output_path+'.daemon.zip', e)
-        #     try:
-        #         put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.daemon.zip',
-        #                          compress=False)
-        #     except Exception as e:
-        #         logger.warning('Could not upload daemon logs: %s' % str(e))
-        #     else:
-        #         logger.warning('Daemon logs uploaded')
-
 
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
