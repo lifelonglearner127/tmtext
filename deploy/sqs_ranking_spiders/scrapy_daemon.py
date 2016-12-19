@@ -1425,7 +1425,7 @@ def is_task_taken(new_task, tasks):
     new_task_id = new_task.get('task_id')
     if new_task_id is None:
         return False
-    taken = bool(new_task_id in task_ids)
+    taken = new_task_id in task_ids
     if taken:
         logger.info('Task {} is already taken'.format(new_task_id))
     return taken
