@@ -516,6 +516,8 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         # Scraper was redirected to product page instead of search results page
         if not items and "officedepot.com/a/products" in response.url:
             prod = SiteProductItem(search_redirected_to_product=True)
+            # TODO we may not need any data for product aside from "search_redirected_to_product" flag.
+            # Rework if that's the case - CON-28287
             req = Request(response.url, callback=self.parse_product, dont_filter=True)
             req.meta["remaining"] = 0
             req.meta['product'] = prod
