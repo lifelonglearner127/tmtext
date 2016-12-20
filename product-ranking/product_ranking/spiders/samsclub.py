@@ -406,6 +406,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
             if review_count == 0:
                 raise BaseException  # we have to jump to the version #2
         except:
+            ## TODO rework to use tmtext/product-ranking/product_ranking/br_bazaarvoice_api_script.py
             if not product.get('buyer_reviews'):
                 contents = json.loads(contents)
                 incl = contents.get('Includes')

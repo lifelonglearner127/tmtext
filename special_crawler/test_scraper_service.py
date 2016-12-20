@@ -164,13 +164,11 @@ class ServiceScraperTest(unittest.TestCase):
                 self.cur.execute(sql)
                 self.con.commit()
 
-            self.cur.execute("update console_urlsample set not_a_product=0, json=$$%s$$, qualified_date='%s' where url='%s'"
-                             % (test_json_str, today.isoformat(), sample_url))
+            self.cur.execute("update console_urlsample set not_a_product=0 where url='%s'" % sample_url)
             self.con.commit()
         except Exception as e:
             print "This url is not valid anymore.\n", e
-            self.cur.execute("update console_urlsample set not_a_product=1, json=$$%s$$, qualified_date='%s' where url='%s'"
-                             % (test_json_str, today.isoformat(), sample_url))
+            self.cur.execute("update console_urlsample set not_a_product=1 where url='%s'" % sample_url)
             self.con.commit()
 
     def initialize_scraper(self, website):
