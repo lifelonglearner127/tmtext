@@ -219,7 +219,7 @@ def switch_branch_if_required(metadata):
                'git checkout {default_branch} -- remote_instance_starter.py &&'
                ' git checkout {default_branch} -- upload_logs_to_s3.py')
         cmd = cmd.format(branch=branch_name, default_branch=default_branch)
-        logger.info("Run '%s'", cmd)
+        logger.info("Run command '%s'", cmd)
         os.system(cmd)
 
 
@@ -417,17 +417,21 @@ def put_msg_to_sqs(queue_name_or_instance, msg):
         write_msg_to_sqs(queue_name_or_instance, msg)
 
 
-def compress_multiple_files(output_fname, *filenames):
+def compress_multiple_files(output_fname, filenames):
     """ Creates a single ZIP archive with the given files in it """
     try:
         import zlib
         mode = zipfile.ZIP_DEFLATED
     except ImportError:
         mode = zipfile.ZIP_STORED
-    zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
-    for filename in filenames:
-        zf.write(filename=filename, arcname=os.path.basename(filename))
-    zf.close()
+    try:
+        zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
+        for filename in filenames:
+            zf.write(filename=filename, arcname=os.path.basename(filename))
+    except Exception as e:
+        logger.error('Error trying to zip multiple log files: {}'.format(e))
+    else:
+        zf.close()
 
 
 def put_file_into_s3(bucket_name, fname, compress=True,
@@ -476,7 +480,7 @@ def put_file_into_s3(bucket_name, fname, compress=True,
     k.key = folders
     # Add file creation time to metadata
     if is_add_file_time:
-        k.set_metadata('creation_time', get_file_cm_time(filename))
+        k.set_metadata('creation_time', get_file_cm_time(fname))
     try:
         # Upload file to S3
         k.set_contents_from_filename(fname)
@@ -551,6 +555,7 @@ def install_geckodriver(
         github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
     import lxml.html
     import requests
+    logger.info('Installing geckodriver')
 
     response = requests.get(github_latest_url)
 
@@ -568,6 +573,7 @@ def install_geckodriver(
     os.system('tar xf _geckodriver.tar.gz')
     os.system('mv geckodriver /home/spiders/')
     os.system('chmod +x /home/spiders/geckodriver')
+    logger.info('Geckodriver installation finished')
 
 
 class ScrapyTask(object):
@@ -670,15 +676,6 @@ class ScrapyTask(object):
         if self.current_signal:
             s += self.current_signal[1]['wait']
 
-        # This is needed when there are low number of jobs, so
-        if self.is_screenshot_job():
-            output_path = self.get_output_path()
-            jl_results_path = output_path + '.screenshot.jl'
-            if not os.path.exists(jl_results_path) or os.path.exists(
-                    jl_results_path) and not os.path.getsize(jl_results_path):
-                logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
-                # screenshot task not finished yet? add 90 seconds to max wait time
-                s += 90
         return s
 
     def _dispose(self):
@@ -686,12 +683,14 @@ class ScrapyTask(object):
         used to terminate scrapy process, called from finish method
         kill process if running, drop connection if opened
         """
+
         if self.process_bsr and self.process_bsr.poll() is None:
             try:
                 os.killpg(os.getpgid(self.process_bsr.pid), 9)
             except OSError as e:
                 logger.error('OSError: %s', e)
         if self.process and self.process.poll() is None:
+            logger.info('Trying to dispose process: {}'.format(self.process.pid))
             try:
                 os.killpg(os.getpgid(self.process.pid), 9)
             except OSError as e:
@@ -783,9 +782,10 @@ class ScrapyTask(object):
         zips all log giles, found in the /tmp dir to the output_fname
         """
         log_files = list(self._get_daemon_logs_files())
+        logger.info('Trying to zip all daemon log files, got log_files: {}'.format(log_files))
         if os.path.exists(output_fname):
             os.unlink(output_fname)
-        compress_multiple_files(output_fname, *log_files)
+        compress_multiple_files(output_fname, log_files)
         return output_fname
 
     @staticmethod
@@ -849,7 +849,6 @@ class ScrapyTask(object):
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, jl_results_path,
                         is_add_file_time=True)
-                    logger.info('Screenshot file uploaded: %s' % (jl_results_path))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
                     logger.exception(ex)
@@ -857,7 +856,6 @@ class ScrapyTask(object):
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, url2screenshot_log_path,
                         is_add_file_time=True)
-                    logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
                 except Exception as ex:
                     logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
@@ -867,7 +865,7 @@ class ScrapyTask(object):
         if CONVERT_TO_CSV:
             try:
                 csv_filepath = convert_json_to_csv(output_path, logger)
-                logger.info('Zip created at: %r.', csv_filepath)
+                logger.info('JSON converted to CSV file created at: %r.', csv_filepath)
                 csv_data_key = put_file_into_s3(
                     AMAZON_BUCKET_NAME, csv_filepath)
             except Exception as e:
@@ -882,33 +880,11 @@ class ScrapyTask(object):
             logger.error("Failed to load info to results sqs. Amazon keys "
                          "wasn't received. data_key=%r, logs_key=%r.",
                          data_key, logs_key)
-
-        logger.info("Spider default output:\n%s%s",
-                    self.process.stderr.read(),
+        # TODO Fix spider stderr output
+        logger.info("Spider default output:\n%s",
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
 
-        # upload scrapy_daemon logs
-        daemon_logs_zipfile = None
-        try:
-            daemon_logs_zipfile = self._zip_daemon_logs()
-        except Exception as e:
-            logger.warning('Could not create daemon ZIP: %s' % str(e))
-        if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
-            # now move the file into output path folder
-            if os.path.exists(output_path+'.daemon.zip'):
-                os.unlink(output_path+'.daemon.zip')
-            try:
-                os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
-            except OSError as e:
-                logger.error('File %r to %r rename error: %s.',
-                             daemon_logs_zipfile, output_path+'.daemon.zip', e)
-            try:
-                put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
-                                 compress=False)
-                logger.warning('Daemon logs uploaded')
-            except Exception as e:
-                logger.warning('Could not upload daemon logs: %s' % str(e))
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
         self.task_data['finish_time'] = \
@@ -1269,7 +1245,7 @@ class ScrapyTask(object):
 
     def report(self):
         """returns string with the task running stats"""
-        s = 'Task #%s, command %r.\n' % (self.task_data.get('task_id', 0),
+        s = 'Parsed task #%s, command %r.\n' % (self.task_data.get('task_id', 0),
                                          self._parse_task_and_get_cmd())
         if self.start_date:
             s += 'Task started at %s.\n' % str(self.start_date.time())
@@ -1409,7 +1385,7 @@ def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
     json_task = json.dumps(task)
-    logger.info('Notify cache task: %s', json_task)
+    logger.info('notify_cache: sending request to cache for stats, task: %s', json_task)
     data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     if 'start_time' in task and task['start_time']:
         if ('finish_time' in task and not task['finish_time']) or \
@@ -1419,10 +1395,10 @@ def notify_cache(task, is_from_cache=False):
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              auth=CACHE_AUTH)
-        logger.info('Cache: updated task (%s), status %s.',
+        logger.info('notify_cache: updated task (%s), status %s.',
                     task.get('task_id'), resp.status_code)
     except Exception as ex:
-        logger.warning('Cache: update completed task error: %s.', ex)
+        logger.warning('notify_cache: update completed task error: %s.', ex)
 
 
 def del_duplicate_tasks(tasks):
@@ -1447,7 +1423,10 @@ def is_task_taken(new_task, tasks):
     new_task_id = new_task.get('task_id')
     if new_task_id is None:
         return False
-    return new_task_id in task_ids
+    taken = new_task_id in task_ids
+    if taken:
+        logger.info('Task {} is already taken'.format(new_task_id))
+    return taken
 
 
 def store_tasks_metrics(task, redis_db):
@@ -1720,10 +1699,11 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
-    # try to get tasks, untill max number of tasks is reached or
+    # try to get tasks, until max number of tasks is reached or
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries and \
             not is_end_billing_instance_time():
+        logger.info('Tasks taken/Max concurrent tasks: {}/{}'.format(len(tasks_taken), MAX_CONCURRENT_TASKS))
         # Skip if needed getting first task. After restarting task
         # in old options. For work scrapy daemon with a new source code
         # from new branch and with old task.
@@ -1756,43 +1736,46 @@ def main():
             options['MAX_CONCURRENT_TASKS'] = MAX_CONCURRENT_TASKS
             options['max_tries'] = max_tries
             options['TASK_QUEUE_NAME'] = TASK_QUEUE_NAME
-        if 'url' in task_data and 'searchterms_str' not in task_data \
-                and not 'checkout' in task_data['site']:
-            if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
-                                           # for "light" URL-based jobs
-                MAX_CONCURRENT_TASKS += 1
 
-        if task_data['site'] == 'walmart':
-            task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
-            with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
-            if task_quantity > 600:
-                # decrease num of parallel tasks for "heavy" Walmart jobs
-                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
-                if with_best_seller_ranking:
-                    # decrease max_concurrent_tasks even more if it's BS task
-                    #  which actually runs 2x spiders
+        if is_same_branch(get_branch_for_task(task_data), branch):
+            # job should only change concurrency if it will be taken later
+            # if job is on different branch, it will be skipped later
+            if 'url' in task_data and 'searchterms_str' not in task_data \
+                    and not 'checkout' in task_data['site']:
+                if MAX_CONCURRENT_TASKS < 70:
+                    # increase num of parallel jobs for "light" URL-based jobs
+                    MAX_CONCURRENT_TASKS += 1
+            if task_data['site'] == 'walmart':
+                task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
+                with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
+                if task_quantity > 600:
+                    # decrease num of parallel tasks for "heavy" Walmart jobs
                     MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-            elif 300 < task_quantity < 600:
-                # decrease num of parallel tasks for "heavy" Walmart jobs
-                MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
-                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
-                if with_best_seller_ranking:
-                    # decrease max_concurrent_tasks even more if it's BS task
-                    #  which actually runs 2x spiders
+                                ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                    if with_best_seller_ranking:
+                        # decrease max_concurrent_tasks even more if it's BS task
+                        #  which actually runs 2x spiders
+                        MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                        logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                    ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+                elif 300 < task_quantity < 600:
+                    # decrease num of parallel tasks for "heavy" Walmart jobs
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
-                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif (task_data['site'] in ('dockers', 'nike', 'costco')) or 'checkout' in task_data['site']:
-            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
-        elif ScrapyTask(None, task_data, None).is_screenshot_job():
-            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
+                                ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                    if with_best_seller_ranking:
+                        # decrease max_concurrent_tasks even more if it's BS task
+                        #  which actually runs 2x spiders
+                        MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
+                        logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                    ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+            elif (task_data['site'] in ('dockers', 'nike', 'costco')) or 'checkout' in task_data['site']:
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
+            elif ScrapyTask(None, task_data, None).is_screenshot_job():
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
@@ -1820,6 +1803,7 @@ def main():
                     restart_scrapy_daemon()
         elif not is_same_branch(get_branch_for_task(task_data), branch):
             # make sure all tasks are in same branch
+            logger.info("Task is in different branch: {}, skipping".format(get_branch_for_task(task_data)))
             queue.reset_message()
             continue
         # Store jobs metrics
@@ -1867,6 +1851,11 @@ def main():
         logger.info('For task %s, max allowed running time is %ss', (
             _t.task_data.get('task_id'), _t.get_total_wait_time()))
     max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 160
+
+    # Quick fix for rare bug:
+    # 2016-12-15 20:50:34,921 [scrapy_daemon] INFO:Max allowed running time is 86560s
+    max_wait_time = 600 if max_wait_time > 600 else max_wait_time
+    
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
