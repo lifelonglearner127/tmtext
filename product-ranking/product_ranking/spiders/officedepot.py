@@ -228,6 +228,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         br_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
                                        response.body_as_unicode()))
         meta['_br_count'] = br_count
+        meta['product'] = product
 
         reqs.append(Request(
             url=self.REVIEW_URL.format(product_id=self._get_product_id(
@@ -512,9 +513,18 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             '//div[contains(@class, "descriptionFull")]/'
             'a[contains(@class, "med_txt")]/@href'
         ).extract() or response.css('.desc_text a::attr("href")').extract()
-
-        for link in items:
-            yield link, SiteProductItem()
+        # Scraper was redirected to product page instead of search results page
+        if not items and "officedepot.com/a/products" in response.url:
+            prod = SiteProductItem(search_redirected_to_product=True)
+            # TODO we may not need any data for product aside from "search_redirected_to_product" flag.
+            # Rework if that's the case - CON-28287
+            req = Request(response.url, callback=self.parse_product, dont_filter=True)
+            req.meta["remaining"] = 0
+            req.meta['product'] = prod
+            yield req, prod
+        else:
+            for link in items:
+                yield link, SiteProductItem()
 
     def _get_nao(self, url):
         nao = re.search(r'nao=(\d+)', url)
